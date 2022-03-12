@@ -1,0 +1,4 @@
+﻿  aexp.cpp
+E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\aexp.cpp(5,20): warning C4018: '<' : incompatibilité signed/unsigned
+E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\aexp.cpp(22,20): warning C4018: '<' : incompatibilité signed/unsigned
+  LS Poject.vcxproj -> E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\Debug\LS Poject.exe
