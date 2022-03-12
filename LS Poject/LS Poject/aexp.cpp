@@ -1,17 +1,34 @@
 #include "aexp.h"
 
 //put leaf to null and char to value
-aexp::aexp(char ope)
-{
-	this->ope = ope;
+aexp::aexp(const std::string ope, aexp* vleft, aexp* vright) {
+	this->value = ope;
+	this->lLeaf = vleft;
+	this->rLeaf = vright;
+}
+
+aexp::aexp(const std::string val) {
+	this->value = val;
 	this->lLeaf = nullptr;
 	this->rLeaf = nullptr;
 }
 
+//by copy
+aexp::aexp(const aexp& exp) {
+	this->value = exp.value;
+	this->lLeaf = exp.lLeaf;
+	this->rLeaf = exp.rLeaf;
+}
+
 aexp::~aexp()
 {
-	delete this->rLeaf;
-	delete this->lLeaf;
+	if (this->rLeaf != nullptr) {
+		delete this->rLeaf;
+	}
+	
+	if (this->lLeaf != nullptr) {
+		delete this->lLeaf;
+	} 
 }
 
 aexp aexp::operator+(const aexp& exp) {
@@ -19,37 +36,69 @@ aexp aexp::operator+(const aexp& exp) {
 	return *this;
 }
 
-void aexp::addLLeaf(const char ope, const char val) {
-	char cpy = this->ope;
-	this->addLLeaf = new aexp();
+//Add values to current exp like 3 + 5 * 7 and we add * 8 we get (3 + 5 * 7) * 8 where * 8 is on first root
+void aexp::addLLeaf(aexp* exp, const std::string value) {
+	aexp* cpy = new aexp(*this);
+	this->value = value;
+	this->lLeaf = exp;
+	this->rLeaf = cpy;
 }
 
-void aexp::addRLeaf(const char ope, const char val) {
-
+void aexp::addRLeaf(aexp* exp, const std::string value) {
+	aexp* cpy = new aexp(*this);
+	this->value = value;
+	this->rLeaf = exp;
+	this->lLeaf = cpy;
 }
 
-char aexp::getRoot() {
-
+void aexp::changeRoot(std::string s) {
+	this->value = s;
 }
 
-char aexp::getLLeaf() {
-
+std::string aexp::getRoot() {
+	return this->value;
 }
 
-char aexp::getRLeaf() {
-
+void aexp::changeLLeaf(aexp* exp) {
+	this->lLeaf = exp;
 }
 
-std::ostream& operator<<(std::ostream& os, const aexp& exp) {
-	
-	for (int i = 0; i < exp.expr.size(); i++) {
-		if (i == 0) {
-			os << exp.expr.at(i);
-		}
-		else {
-			os << " " << exp.expr.at(i);
-		}
+void aexp::changeRLeaf(aexp* exp) {
+	this->rLeaf = exp;
+}
+
+aexp* aexp::getLLeaf() {
+	return this->lLeaf;
+}
+
+aexp* aexp::getRLeaf() {
+	return this->rLeaf;
+}
+
+std::string aexp::aexp_to_string(std::string& rt) {
+	if (this->lLeaf == nullptr && this->rLeaf == nullptr) {
+		rt.append(this->value);
 	}
-	os << std::endl;
-	return os;
+	else if (this->lLeaf == nullptr) {
+		rt.append(this->value);
+		rt.push_back(' ');
+		this->rLeaf->aexp_to_string(rt);
+		rt.push_back(')');
+	}
+	else if (this->lLeaf == nullptr) {
+		rt.append(this->value);
+		rt.push_back(' ');
+		this->lLeaf->aexp_to_string(rt);
+		rt.push_back(')');
+	}
+	else {
+		rt.push_back('(');
+		this->lLeaf->aexp_to_string(rt);
+		rt.push_back(' ');
+		rt.append(this->value);
+		rt.push_back(' ');
+		this->rLeaf->aexp_to_string(rt);
+		rt.push_back(')');
+	}
+	return rt;
 }

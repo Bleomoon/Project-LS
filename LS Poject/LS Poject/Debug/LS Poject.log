@@ -1,4 +1,6 @@
-﻿  aexp.cpp
-E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\aexp.cpp(5,20): warning C4018: '<' : incompatibilité signed/unsigned
-E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\aexp.cpp(22,20): warning C4018: '<' : incompatibilité signed/unsigned
-  LS Poject.vcxproj -> E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\Debug\LS Poject.exe
+﻿  main.cpp
+E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\main.cpp(63,34): error C2664: 'void asubst(const std::string,aexp &,const aexp &)' : impossible de convertir l'argument 2 de 'aexp *' en 'aexp &'
+E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\main.cpp(7,6): message : voir la déclaration de 'asubst'
+E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\main.cpp(64,64): error C2664: 'void asubst(const std::string,aexp &,const aexp &)' : impossible de convertir l'argument 2 de 'aexp *' en 'aexp &'
+E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\main.cpp(7,6): message : voir la déclaration de 'asubst'
+E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\main.cpp(77,20): warning C4018: '<' : incompatibilité signed/unsigned
