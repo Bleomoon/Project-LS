@@ -3,52 +3,58 @@
 //put leaf to null and char to value
 aexp::aexp(const std::string ope, aexp* vleft, aexp* vright) {
 	this->value = ope;
-	this->lLeaf = vleft;
-	this->rLeaf = vright;
+	this->left = vleft;
+	this->right = vright;
 }
 
 aexp::aexp(const std::string val) {
 	this->value = val;
-	this->lLeaf = nullptr;
-	this->rLeaf = nullptr;
+	this->left = nullptr;
+	this->right = nullptr;
 }
 
 //by copy
 aexp::aexp(const aexp& exp) {
 	this->value = exp.value;
-	this->lLeaf = exp.lLeaf;
-	this->rLeaf = exp.rLeaf;
+	this->left = exp.left;
+	this->right = exp.right;
 }
 
 aexp::~aexp()
 {
-	if (this->rLeaf != nullptr) {
-		delete this->rLeaf;
+	if (this->right != nullptr) {
+		delete this->right;
 	}
 	
-	if (this->lLeaf != nullptr) {
-		delete this->lLeaf;
+	if (this->left != nullptr) {
+		delete this->left;
 	} 
 }
 
-aexp aexp::operator+(const aexp& exp) {
-	std::cout << " an operator for axep + axep has not been decided yet, returned current expression" << std::endl;
+aexp aexp::operator=(const aexp& exp) {
+	if (&exp != this) {
+		this->value = exp.value;
+		delete this->left;
+		delete this->right;
+		this->left = exp.left;
+		this->right = exp.right;
+	}
 	return *this;
 }
 
 //Add values to current exp like 3 + 5 * 7 and we add * 8 we get (3 + 5 * 7) * 8 where * 8 is on first root
-void aexp::addLLeaf(aexp* exp, const std::string value) {
+void aexp::addLeft(aexp* exp, const std::string value) {
 	aexp* cpy = new aexp(*this);
 	this->value = value;
-	this->lLeaf = exp;
-	this->rLeaf = cpy;
+	this->left = exp;
+	this->right = cpy;
 }
 
-void aexp::addRLeaf(aexp* exp, const std::string value) {
+void aexp::addRight(aexp* exp, const std::string value) {
 	aexp* cpy = new aexp(*this);
 	this->value = value;
-	this->rLeaf = exp;
-	this->lLeaf = cpy;
+	this->right = exp;
+	this->left = cpy;
 }
 
 void aexp::changeRoot(std::string s) {
@@ -59,45 +65,45 @@ std::string aexp::getRoot() {
 	return this->value;
 }
 
-void aexp::changeLLeaf(aexp* exp) {
-	this->lLeaf = exp;
+void aexp::changeLeft(aexp* exp) {
+	this->left = exp;
 }
 
-void aexp::changeRLeaf(aexp* exp) {
-	this->rLeaf = exp;
+void aexp::changeRight(aexp* exp) {
+	this->right = exp;
 }
 
-aexp* aexp::getLLeaf() {
-	return this->lLeaf;
+aexp* aexp::getLeft() {
+	return this->left;
 }
 
-aexp* aexp::getRLeaf() {
-	return this->rLeaf;
+aexp* aexp::getRight() {
+	return this->right;
 }
 
 std::string aexp::aexp_to_string(std::string& rt) {
-	if (this->lLeaf == nullptr && this->rLeaf == nullptr) {
+	if (this->left == nullptr && this->right == nullptr) {
 		rt.append(this->value);
 	}
-	else if (this->lLeaf == nullptr) {
+	else if (this->left == nullptr) {
 		rt.append(this->value);
 		rt.push_back(' ');
-		this->rLeaf->aexp_to_string(rt);
+		this->right->aexp_to_string(rt);
 		rt.push_back(')');
 	}
-	else if (this->lLeaf == nullptr) {
+	else if (this->left == nullptr) {
 		rt.append(this->value);
 		rt.push_back(' ');
-		this->lLeaf->aexp_to_string(rt);
+		this->left->aexp_to_string(rt);
 		rt.push_back(')');
 	}
 	else {
 		rt.push_back('(');
-		this->lLeaf->aexp_to_string(rt);
+		this->left->aexp_to_string(rt);
 		rt.push_back(' ');
 		rt.append(this->value);
 		rt.push_back(' ');
-		this->rLeaf->aexp_to_string(rt);
+		this->right->aexp_to_string(rt);
 		rt.push_back(')');
 	}
 	return rt;

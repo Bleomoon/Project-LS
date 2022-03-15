@@ -4,7 +4,7 @@
 #include "valuation.h"
 
 void ainterp(aexp* exp, valuation v);
-void asubst(const std::string name, aexp& bigExp, const aexp& replaceExp);
+void asubst(const std::string name, aexp* bigExp, aexp* replaceExp);
 
 int main() {
 	//we init our expression
@@ -79,27 +79,27 @@ void ainterp(aexp* exp, valuation v) {
 			exp->changeRoot(v.getVariables().at(i).second);
 		}
 
-		if (exp->getLLeaf() != nullptr) {
-			ainterp(exp->getLLeaf(), v);
+		if (exp->getLeft() != nullptr) {
+			ainterp(exp->getLeft(), v);
 		}
-		if (exp->getRLeaf() != nullptr) {
-			ainterp(exp->getRLeaf(), v);
+		if (exp->getRight() != nullptr) {
+			ainterp(exp->getRight(), v);
 		}
 	}
 }
 
 void asubst(const std::string name, aexp* bigExp, aexp* replaceExp) {
-	if (bigExp->getLLeaf() != nullptr) {
-		asubst(name, bigExp->getLLeaf(), replaceExp);
+	if (bigExp->getLeft() != nullptr) {
+		asubst(name, bigExp->getLeft(), replaceExp);
 	}
 
-	if (bigExp->getRLeaf() != nullptr) {
-		asubst(name, bigExp->getRLeaf(), replaceExp);
+	if (bigExp->getRight() != nullptr) {
+		asubst(name, bigExp->getRight(), replaceExp);
 	}
 
 	if (bigExp->getRoot() == name) {
 		bigExp->changeRoot(replaceExp->getRoot());
-		bigExp->changeRLeaf(replaceExp->getRLeaf());
-		bigExp->changeLLeaf(replaceExp->getLLeaf());
+		bigExp->changeRight(replaceExp->getRight());
+		bigExp->changeLeft(replaceExp->getLeft());
 	}
 }

@@ -10,8 +10,8 @@ class aexp
 {
 	//variables
 	std::string value;
-	aexp* rLeaf;
-	aexp* lLeaf;
+	aexp* left;
+	aexp* right;
 
 public:
 	//functions
@@ -19,14 +19,14 @@ public:
 	aexp(const std::string val);
 	aexp(const aexp& exp);
 	~aexp();
-	aexp operator+(const aexp& exp);
-	void changeLLeaf(aexp* exp);
-	void changeRLeaf(aexp* exp);
-	void addLLeaf(aexp* exp, const std::string value);
-	void addRLeaf(aexp* exp, const std::string value);
+	aexp operator=(const aexp& exp);
+	void changeLeft(aexp* exp);
+	void changeRight(aexp* exp);
+	void addLeft(aexp* exp, const std::string value);
+	void addRight(aexp* exp, const std::string value);
 	std::string getRoot();
-	aexp* getLLeaf();
-	aexp* getRLeaf();
+	aexp* getLeft();
+	aexp* getRight();
 	void changeRoot(std::string s);
 	std::string aexp_to_string(std::string& rt);
 };
