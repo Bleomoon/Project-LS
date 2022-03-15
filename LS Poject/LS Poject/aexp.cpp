@@ -2,15 +2,36 @@
 
 //put leaf to null and char to value
 aexp::aexp(const std::string ope, aexp* vleft, aexp* vright) {
-	this->value = ope;
-	this->left = vleft;
-	this->right = vright;
+	if (this->isValid(ope)) {
+		this->value = ope;
+		this->left = vleft;
+		this->right = vright;
+	}
+	else {
+		exit(0);
+	}
+}
+
+aexp::aexp(const std::string ope, aexp* vleft) {
+	if (this->isValid(ope)) {
+		this->value = ope;
+		this->left = vleft;
+		this->right = nullptr;
+	}
+	else {
+		exit(0);
+	}
 }
 
 aexp::aexp(const std::string val) {
-	this->value = val;
-	this->left = nullptr;
-	this->right = nullptr;
+	if (this->isValid(val)) {
+		this->value = val;
+		this->left = nullptr;
+		this->right = nullptr;
+	}
+	else {
+		exit(0);
+	}
 }
 
 //by copy
@@ -79,6 +100,33 @@ aexp* aexp::getLeft() {
 
 aexp* aexp::getRight() {
 	return this->right;
+}
+
+bool aexp::isValid(std::string val) {
+	//si taille de val > 1 alors on a un nombre
+	if (val.size() > 1) {
+		//si constantes
+		for (int i = 0; i < val.size(); i++) {
+			if (std::isdigit(val.at(i)) == false) {
+				std::cout << "Error in creating aexp expression, number is unknown" << std::endl;
+				return false;
+			}
+		}
+		return true;
+	}
+	else if ((val.at(0) >= 'a' && val.at(0) <= 'z') || (val.at(0) >= 'A' && val.at(0) <= 'Z')) { //si variables{
+		return true;
+	}
+	else if (val == "+" || val == "-" || val == "*") { //si +, - ou *{
+		return true;
+	}
+	else if (std::isdigit(val.at(0))) {
+		return true;
+	}
+	else {
+		std::cout << "Error in creating aexp expression, variables or operator are unkown" << std::endl;
+		return false;
+	}
 }
 
 std::string aexp::aexp_to_string(std::string& rt) {

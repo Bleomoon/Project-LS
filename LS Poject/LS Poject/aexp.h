@@ -16,6 +16,7 @@ class aexp
 public:
 	//functions
 	aexp(const std::string ope, aexp* vleft, aexp* vright);
+	aexp(const std::string ope, aexp* vleft);
 	aexp(const std::string val);
 	aexp(const aexp& exp);
 	~aexp();
@@ -24,6 +25,7 @@ public:
 	void changeRight(aexp* exp);
 	void addLeft(aexp* exp, const std::string value);
 	void addRight(aexp* exp, const std::string value);
+	bool isValid(std::string val);
 	std::string getRoot();
 	aexp* getLeft();
 	aexp* getRight();

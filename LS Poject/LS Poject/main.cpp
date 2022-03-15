@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "aexp.h"
+#include "bexp.h"
 #include "valuation.h"
 
 void ainterp(aexp* exp, valuation v);
@@ -70,8 +71,20 @@ int main() {
 	exp9.aexp_to_string(rt);
 	std::cout << rt << std::endl;
 	rt.clear();
-}
 
+	//we create bexp expression
+	bexp exp1 = bexp("vrai");
+	bexp exp1 = bexp("et", new bexp("vrai"), new bexp("faux"));
+	bexp exp1 = bexp("non", new bexp("vrai"));
+	bexp exp1 = bexp("non", new bexp("vrai"), new bexp("faux"));
+	bexp exp1 = bexp("=", new bexp("2"), new bexp("4"));
+
+	bexp exp1 = bexp("=", new bexp("+", new bexp("3"), new bexp("5")), new bexp("*", new bexp("2"), new bexp("4")));
+	bexp exp1 = bexp("=", new bexp("*", new bexp("2"), new bexp("x")), new bexp("+", new bexp("y"), new bexp("1")));
+	bexp exp1 = bexp("<=", new bexp("5"), new bexp("7"));
+	bexp exp1 = bexp("et", new bexp("<=", new bexp("+", new bexp("8"), new bexp("9")), new bexp("*", new bexp("4"), new bexp("5"))), new bexp("<=", new bexp("+", new bexp("3"), new bexp("x")), new bexp("*", new bexp("4"), new bexp("y"))));
+
+}
 
 void ainterp(aexp* exp, valuation v) {
 	for (int i = 0; i < v.getVariables().size(); i++) {
