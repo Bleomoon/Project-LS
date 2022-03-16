@@ -41,6 +41,11 @@ aexp::aexp(const aexp& exp) {
 	this->right = exp.right;
 }
 
+aexp::aexp() {
+	this->left = nullptr;
+	this->right = nullptr;
+}
+
 aexp::~aexp()
 {
 	if (this->right != nullptr) {
@@ -129,30 +134,31 @@ bool aexp::isValid(std::string val) {
 	}
 }
 
-std::string aexp::aexp_to_string(std::string& rt) {
+std::string aexp::aexp_to_string() {
+	std::string s;
 	if (this->left == nullptr && this->right == nullptr) {
-		rt.append(this->value);
+		s.append(this->value);
 	}
 	else if (this->left == nullptr) {
-		rt.append(this->value);
-		rt.push_back(' ');
-		this->right->aexp_to_string(rt);
-		rt.push_back(')');
+		s.append(this->value);
+		s.append(" ");
+		s.append(this->right->aexp_to_string());
+		s.append(")");
 	}
-	else if (this->left == nullptr) {
-		rt.append(this->value);
-		rt.push_back(' ');
-		this->left->aexp_to_string(rt);
-		rt.push_back(')');
+	else if (this->right == nullptr) {
+		s.append(this->value);
+		s.append(" ");
+		s.append(this->left->aexp_to_string());
+		s.append(")");
 	}
 	else {
-		rt.push_back('(');
-		this->left->aexp_to_string(rt);
-		rt.push_back(' ');
-		rt.append(this->value);
-		rt.push_back(' ');
-		this->right->aexp_to_string(rt);
-		rt.push_back(')');
+		s.append("(");
+		s.append(this->left->aexp_to_string());
+		s.append(" ");
+		s.append(this->value);
+		s.append(" ");
+		s.append(this->right->aexp_to_string());
+		s.append(")");
 	}
-	return rt;
+	return s;
 }

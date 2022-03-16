@@ -1,3 +1,5 @@
-﻿  main.cpp
-E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\main.cpp(77,20): warning C4018: '<' : incompatibilité signed/unsigned
+﻿  bexp.cpp
+  main.cpp
+E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\LS Poject\main.cpp(75,20): warning C4018: '<' : incompatibilité signed/unsigned
+  Génération de code en cours...
   LS Poject.vcxproj -> E:\Users\Bleomoon\Desktop\EVERYTHING\Cours\2021\LS\Project-LS\LS Poject\Debug\LS Poject.exe

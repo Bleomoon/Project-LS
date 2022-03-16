@@ -142,11 +142,13 @@
     <ClCompile Include="aexp.cpp" />
     <ClCompile Include="bexp.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="prog.cpp" />
     <ClCompile Include="valuation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aexp.h" />
     <ClInclude Include="bexp.h" />
+    <ClInclude Include="prog.h" />
     <ClInclude Include="valuation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

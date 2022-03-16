@@ -19,18 +19,19 @@ public:
 	aexp(const std::string ope, aexp* vleft);
 	aexp(const std::string val);
 	aexp(const aexp& exp);
+	aexp();
 	~aexp();
 	aexp operator=(const aexp& exp);
 	void changeLeft(aexp* exp);
 	void changeRight(aexp* exp);
 	void addLeft(aexp* exp, const std::string value);
 	void addRight(aexp* exp, const std::string value);
-	bool isValid(std::string val);
+	virtual bool isValid(std::string val);
 	std::string getRoot();
 	aexp* getLeft();
 	aexp* getRight();
 	void changeRoot(std::string s);
-	std::string aexp_to_string(std::string& rt);
+	std::string aexp_to_string();
 };
 
 #endif
