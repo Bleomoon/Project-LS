@@ -209,9 +209,16 @@ type prog =
   | Skip
   | Affect of aexp * affect * aexp
   | Seq of prog * prog
-  | Condition of cond * aexp * connector * cond * prog * cond * prog
+  | Condition of cond * aexp * connector * aexp * cond * prog * cond * prog
   | Repeat of loop * aexp * loop * prog * loop
 ;;
+
+let exp21 = Affect(Var('y'), AFFECT, Cst(7));;
+let exp22 = Affect(Var('z'), AFFECT, Binary(Add, Cst(3), Cst(4)));;
+let exp23 = Affect(Var('x'), AFFECT, Binary(Mult, Cst(2), Var('x')));;
+let exp24 = Affect(Var('n'), AFFECT, Cst(3));;
+let exp25 = Condition(IF, Var('n'), InfEqual, Cst(4), THEN, Affect(Var('n'), AFFECT, Binary(Add, Cst(3), Binary(Mult, Cst(2), Var('n')))), ELSE, Affect(Var('n'), AFFECT, Binary(Add, Var('x'), Cst(1))));;
+let exp26 = Repeat(REPEAT, Cst(10), DO, Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Cst(1))), OD);;
 
 let cond_to_string cond =
   match cond with
@@ -237,6 +244,16 @@ let rec prog_to_string prog =
   | Skip -> "skip"
   | Affect(aexp1, affect, aexp2) -> aexp_to_string(aexp1) ^ " " ^ affect_to_string(affect) ^ " " ^ aexp_to_string(aexp2)
   | Seq(p1, p2) -> prog_to_string(p1)  ^ " " ^ prog_to_string(p2)
-  | Condition(cond1, aexp1, conn, cond2, prog1, cond3, prog2) ->  cond_to_string(cond1) ^ "\n\t" ^ aexp_to_string(aexp1) ^ " " ^ connector_to_string(conn) ^ " " ^ cond_to_string(cond2) ^ "\n\t" ^ prog_to_string(prog1) ^ " " ^ cond_to_string(cond3)  ^ "\n\t" ^ prog_to_string(prog2) ^ "\n"
-  | Repeat(loop, aexp, loop2, prog, loop3) -> loop_to_string(loop) ^ " " ^ aexp_to_string(aexp) ^ " " ^ loop_to_string(loop2) ^ "\n\t" ^ prog_to_string(prog) ^ "\n\t" ^ loop_to_string(loop3) ^ "\n"
+  | Condition(cond1, aexp1, conn, aexp2, cond2, prog1, cond3, prog2) ->  cond_to_string(cond1) ^ "   " ^ aexp_to_string(aexp1) ^ " " ^ connector_to_string(conn) ^ " " ^ aexp_to_string(aexp2) ^ " " ^ cond_to_string(cond2) ^ "   " ^ prog_to_string(prog1) ^ " " ^ cond_to_string(cond3)  ^ "   " ^ prog_to_string(prog2)
+  | Repeat(loop, aexp, loop2, prog, loop3) -> loop_to_string(loop) ^ " " ^ aexp_to_string(aexp) ^ " " ^ loop_to_string(loop2) ^ "   " ^ prog_to_string(prog) ^ "   " ^ loop_to_string(loop3)
 ;;
+
+prog_to_string(exp21);;
+prog_to_string(exp22);;
+prog_to_string(exp23);;
+prog_to_string(exp24);;
+prog_to_string(exp25);;
+prog_to_string(exp26);;
+
+
+(*1.3.2 Syntaxe abstraite *)
