@@ -395,6 +395,41 @@ pinterp(exp39, valuaP);;
 pinterp(exp39b, valuaP);;
 
 (*1.4.3 Substitutions *)
+let psubst name aexp pexp =
+  begin match pexp with
+  | True -> True
+  | False -> False
+  | Neg(co, prop) -> 
+  | BinaryPexp(cp, p1, p2) ->
+  | ImplPexp(co, p1, p2) ->
+  | EqualAexp(co, aexp1, aexp2) ->
+  | InfEqAexp(co, aexp1, aexp2) -> 
+  end
+;;
+
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp30));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp31));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp32));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp33));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp34));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp35));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp36));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp37));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp38));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp39));;
+prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp39b));;
+
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp30));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp31));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp32));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp33));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp34));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp35));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp36));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp37));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp38));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp39));;
+prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp39b));;
 
 (*1.4.4 Les triplets de Hoare *)
 
