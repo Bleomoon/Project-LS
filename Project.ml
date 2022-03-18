@@ -1,4 +1,4 @@
-open ;;
+open List;;
 
 (*1.1 Expressions arithmetiques*)
 (*1.1.1 Syntaxe abstraite *)
@@ -40,7 +40,7 @@ aexp_to_string(exp6);;
 aexp_to_string(exp7);;
 aexp_to_string(exp8);;
 
-(*1.1.2 Interpr�tation*)
+(*1.1.2 Interprétation*)
 type valuation = (char * int) list;;
 
 let ainterp_ter x y op =
@@ -96,25 +96,35 @@ let rec asubst name aexp1 aexp2 =
 aexp_to_string((asubst 'x' (Cst(5)) exp5));;
 aexp_to_string((asubst 'y' (Binary(Add, Var('z'), Cst(2))) exp7));;
 
-(*1.2 Les expressions bool�ennes*)
+(*1.2 Les expressions booléennes*)
 (*1.2.1 Syntaxe abstraite*)
-type connector = | Equal | InfEqual | And | Or | Not;;
+type connectorN = | Not;;
+type connectorAexp = | Equal | InfEqual;; 
+type connectorBexp = | And | Or;;
 type bexp =
   | True
   | False
-  | Neg of connector * bexp
-  | BinaryBexp of connector * bexp * bexp
-  | EqualAexp of connector * aexp *  aexp
-  | InfEqAexp of connector * aexp *  aexp
+  | Neg of connectorN  * bexp
+  | BinaryBexp of connectorBexp * bexp * bexp
+  | EqualAexp of connectorAexp * aexp *  aexp
+  | InfEqAexp of connectorAexp * aexp *  aexp
 ;;
 
-let connector_to_string connector =
-  match connector with
+let connectorN_to_string connectorN =
+  match connectorN with
+  | Not -> "non"
+;;
+
+let connectorA_to_string connectorAexp =
+  match connectorAexp with
   | Equal -> "="
   | InfEqual -> "<="
+;;
+
+let connectorB_to_string connectorBexp =
+  match connectorBexp with
   | And -> "et"
   | Or -> "ou"
-  | Not -> "non"
 ;;
 
 let exp11 = True;;
@@ -131,10 +141,10 @@ let rec bexp_to_string bexp =
   match bexp with
   | True -> "vrai"
   | False -> "faux"
-  | Neg(op, fd) -> "(" ^ connector_to_string(op) ^ " " ^ bexp_to_string(fd) ^ ")"
-  | BinaryBexp(op, fg, fd) -> "(" ^ bexp_to_string(fg) ^ " " ^ connector_to_string(op) ^ " " ^ bexp_to_string(fd) ^ ")"
-  | EqualAexp(op, fg, fd) -> "(" ^ aexp_to_string(fg) ^ " " ^ connector_to_string(op) ^ " " ^ aexp_to_string(fd) ^ ")"
-  | InfEqAexp(op, fg, fd) -> "(" ^ aexp_to_string(fg) ^ " " ^ connector_to_string(op) ^ " " ^ aexp_to_string(fd) ^ ")"
+  | Neg(op, fd) -> "(" ^ connectorN_to_string(op) ^ " " ^ bexp_to_string(fd) ^ ")"
+  | BinaryBexp(op, fg, fd) -> "(" ^ bexp_to_string(fg) ^ " " ^ connectorB_to_string(op) ^ " " ^ bexp_to_string(fd) ^ ")"
+  | EqualAexp(op, fg, fd) -> "(" ^ aexp_to_string(fg) ^ " " ^ connectorA_to_string(op) ^ " " ^ aexp_to_string(fd) ^ ")"
+  | InfEqAexp(op, fg, fd) -> "(" ^ aexp_to_string(fg) ^ " " ^ connectorA_to_string(op) ^ " " ^ aexp_to_string(fd) ^ ")"
 ;;
 
 bexp_to_string(exp11);;
@@ -148,7 +158,7 @@ bexp_to_string(exp18);;
 bexp_to_string(exp19);;
 
 
-(*1.2.1 Interpr�tation *)
+(*1.2.1 Interprétation *)
 let rec binterp(bexp, list_valuation) =
   begin match bexp with
   | True -> true
@@ -160,16 +170,28 @@ let rec binterp(bexp, list_valuation) =
      | _ -> if((binterp(bexpB, list_valuation)) == true) then false else true
      end
   | BinaryBexp(op, fg, fd) ->
-     begin match fg, fd with
-     | True, True -> true
-     | True, False -> false
-     | True, _ -> if((binterp(fd, list_valuation)) == true) then true else false
-     | False, True -> false
-     | False, False -> false
-     | False, _ -> false
-     | _ , True -> if((binterp(fg, list_valuation)) == true) then true else false
-     | _, False -> false
-     | _, _ -> if( (binterp(fd, list_valuation)) == true) then (binterp(fg, list_valuation)) else false
+     begin match op with
+     | Or -> 
+        begin match fg, fd with
+        | True, _ -> true
+        | _, True -> true
+        | False, False -> false
+        | False, _ -> if( (binterp(fd, list_valuation)) == true) then true else false
+        | _ , False -> if((binterp(fg, list_valuation)) == true) then true else false
+        | _, _ -> if( (binterp(fd, list_valuation)) == true) then true else  (binterp(fg, list_valuation))
+        end
+     | And ->
+        begin match fg, fd with
+        | True, True -> true
+        | True, False -> false
+        | True, _ -> if((binterp(fd, list_valuation)) == true) then true else false
+        | False, True -> false
+        | False, False -> false
+        | False, _ -> false
+        | _ , True -> if((binterp(fg, list_valuation)) == true) then true else false
+        | _, False -> false
+        | _, _ -> if( (binterp(fd, list_valuation)) == true) then (binterp(fg, list_valuation)) else false
+        end
      end
   | EqualAexp(op, fg, fd) ->
      begin match fg, fd with
@@ -187,7 +209,7 @@ let rec binterp(bexp, list_valuation) =
      end
   end
 ;;
-
+²
 let valuaB = [('x', 7);('y', 3)];;
 
 binterp(exp11, valuaB);;
@@ -206,6 +228,7 @@ type affect = | AFFECT;;
 type cond = | IF | THEN | ELSE;;
 type loop = | REPEAT | DO | OD;;
 type prog =
+  | Cal of aexp
   | Skip
   | Affect of aexp * affect * aexp
   | Seq of prog * prog
@@ -241,6 +264,7 @@ let loop_to_string loop =
 
 let rec prog_to_string prog =
   match prog with
+  | Cal(aexp) -> aexp_to_string(aexp)
   | Skip -> "skip"
   | Affect(aexp1, affect, aexp2) -> aexp_to_string(aexp1) ^ " " ^ affect_to_string(affect) ^ " " ^ aexp_to_string(aexp2)
   | Seq(p1, p2) -> prog_to_string(p1)  ^ " " ^ prog_to_string(p2)
@@ -256,75 +280,122 @@ prog_to_string(exp25);;
 prog_to_string(exp26);;
 
 
-(*1.3.2 Interpr�tation *)
-let rec selfcompose func n : int =
+(*1.3.2 Interprétation *)
+let rec selfcompose(func, n) =
   if (n == 0)
-  then (func n)
-  else selfcompose func (n-1) + (func 0)
+  then func
+  else selfcompose(func, (n-1))
 ;;
 
 let add n =
   n + 2
 ;;
 
-selfcompose add 10;;
+selfcompose(add, 10);;
 
+let create_valuation name n =
+  [(name, n)]
+;;
+
+
+let rec exec_bis prog list_valuation list =
+  match prog with
+  | Cal(aexp) -> list_valuation
+  | Skip -> list_valuation
+  | Affect(aexp1, affect, aexp2) ->
+     begin match aexp1 with
+     | Var(v) -> list@(create_valuation v (ainterp(aexp2,list_valuation)))
+     | _ -> list@(create_valuation 'p' (ainterp(aexp2, list_valuation)))
+     end
+  | Seq(prog1, prog2) -> list@(exec_bis prog1 list_valuation list)@(exec_bis prog2 list_valuation list)
+  | Condition(cond1, bexp, cond2, progThen, cond3, progElse) -> if(binterp(bexp, list_valuation)) then list@(exec_bis progThen list_valuation list) else list@(exec_bis progElse list_valuation list)
+  | Repeat(loop1, aexp, loop2, prog, loop3) -> list@selfcompose((exec_bis prog list_valuation list), (ainterp(aexp,list_valuation)))
+;;
 
 let exec prog list_valuation =
-  match prog with
-  | Skip -> 0
-  | Affect(aexp1, affect, aexp2) -> (ainterp aexp2 list_valuation)
-  | Seq -> of prog * prog
-  | Condition(cond1, bexp, cond2, progThen, cond3, progElse) -> if(binterp(bexp, list_valuation)) then exec progThen else exec peogElse
-  | Repeat(loop1, aexp, loop2, prog, loop3) -> selfcompose prog (ainterp aexp list_valuation)bleom
+  exec_bis prog list_valuation []
 ;;
 
+let rec facto n =
+  if(n == 1)
+  then 1
+  else n * (facto n-1)
+;;
 
-(* 1. 4 Triplets de Hoare et validit� *)
+Condition(IF,  EqualAexp(Equal, Cst(n), Cst(0)), THEN, , ELSE,)
+
+let prog_facto n =
+  Repeat(REPEAT, Cst(n), DO, Seq(Affect(Var('x'), AFFECT, ), Affect()),OD)
+  Condition(IF, EqualAexp(Equal, Cst(n), Cst(0)), THEN, Cst(1), ELSE, prog_facto Cst(n-1))
+;;
+
+x Question 7.
+• Écrivez un programme qui calcule la factorielle d’un entier positif et exécutez-le pour
+calculer la factorielle de 5
+• Écrivez un programme qui calcule le nième nombre de la suite de Fibonacci (la version
+itérative) et exécutez-le pour calculer le 8ième nombre de cette suite. 
+
+
+(* 1. 4 Triplets de Hoare et validité *)
 (*1.4.1 Syntaxe abstraite des formules de la logique des propositions *)
-(* Pour �vit� un double match je vais simplement recr�e un type en entier *)
-type tpropCo = | Implicit | Equal | InfEqual | And | Or | Not;;
+(* Pour évité un double match je vais simplement recrée un type en entier *)
+type tpropCoN = | Not;;
+type tpropCoAexp = | Equal | InfEqual;;
+type tpropCoPexp = | And | Or;;
+type tpropCoPimp = | Implicit;;
 type tprop =
-  | True
-  | False
-  | Neg of tpropCo * tprop
-  | BinaryPexp of tpropCo * tprop * tprop
-  | ImplPexp of tpropCo * tprop * tprop
-  | EqualAexp of tpropCo * aexp *  aexp
-  | InfEqAexp of tpropCo * aexp *  aexp
+  | TrueP
+  | FalseP
+  | NegP of tpropCoN * tprop
+  | BinaryPexp of tpropCoPexp * tprop * tprop
+  | ImplPexp of tpropCoPimp * tprop * tprop
+  | EqualPAexp of tpropCoAexp * aexp *  aexp
+  | InfPEqAexp of tpropCoAexp * aexp *  aexp
 ;;
 
-let tpropCo_to_string connector =
-  match connector with
+let tpropCoA_to_string tpropCoAexp =
+  match tpropCoAexp with
   | Equal -> "="
   | InfEqual -> "<="
+;;
+
+let tpropCoP_to_string tpropCoPexp =
+  match tpropCoPexp with
   | And -> "et"
   | Or -> "ou"
-  | Not -> "non"
+;;
+
+let tpropCoPi_to_string tpropCoPimp =
+  match tpropCoPimp with
   | Implicit -> "implique"
 ;;
 
-let exp30 = True;;
-let exp31 = BinaryPexp(And, True, False);;
-let exp32 = Neg(Not, True);;
-let exp33 = BinaryPexp(Or, True, False);;
-let exp34 = ImplPexp(Implicit, False, BinaryPexp(Or, True, False));;
-let exp35 = EqualAexp(Equal, Cst(2), Cst(4));;
-let exp36 = EqualAexp(Equal,  Binary(Add, Cst(3), Cst(5)), Binary(Mult, Cst(2), Cst(4)));;
-let exp37 = EqualAexp(Equal,  Binary(Mult, Cst(2), Var('x')), Binary(Add, Var('y'), Cst(1)));;
-let exp38 = InfEqAexp(InfEqual,  Binary(Add, Cst(3), Var('x')), Binary(Mult, Cst(4), Var('y')));;
-let exp39 = BinaryPexp(And, InfEqAexp(InfEqual, Cst(5), Cst(7)), InfEqAexp(InfEqual, Binary(Add, Cst(8), Cst(9)), Binary(Mult, Cst(4), Cst(5))));;
-let exp39b = ImplPexp(Implicit, EqualAexp(Equal, Var('x'), Cst(1)), InfEqAexp(InfEqual, Var('y'), Cst(0)));;
+let tpropCoN_to_string tpropCoN =
+  match tpropCoN with
+  | Not -> "non"
+;;
+
+let exp30 = TrueP;;
+let exp31 = BinaryPexp(And, TrueP, FalseP);;
+let exp32 = NegP(Not, TrueP);;
+let exp33 = BinaryPexp(Or, TrueP, FalseP);;
+let exp34 = ImplPexp(Implicit, FalseP, BinaryPexp(Or, TrueP, FalseP));;
+let exp35 = EqualPAexp(Equal, Cst(2), Cst(4));;
+let exp36 = EqualPAexp(Equal,  Binary(Add, Cst(3), Cst(5)), Binary(Mult, Cst(2), Cst(4)));;
+let exp37 = EqualPAexp(Equal,  Binary(Mult, Cst(2), Var('x')), Binary(Add, Var('y'), Cst(1)));;
+let exp38 = InfPEqAexp(InfEqual,  Binary(Add, Cst(3), Var('x')), Binary(Mult, Cst(4), Var('y')));;
+let exp39 = BinaryPexp(And, InfPEqAexp(InfEqual, Cst(5), Cst(7)), InfPEqAexp(InfEqual, Binary(Add, Cst(8), Cst(9)), Binary(Mult, Cst(4), Cst(5))));;
+let exp39b = ImplPexp(Implicit, EqualPAexp(Equal, Var('x'), Cst(1)), InfPEqAexp(InfEqual, Var('y'), Cst(0)));;
 
 let rec prop_to_string tprop =
   match tprop with
-  | True -> "vrai"
-  | False -> "faux"
-  | Neg(op, fd) -> "(" ^ tpropCo_to_string(op) ^ " " ^ prop_to_string(fd) ^ ")"
-  | BinaryPexp(op, fg, fd) -> "(" ^ prop_to_string(fg) ^ " " ^ tpropCo_to_string(op) ^ " " ^ prop_to_string(fd) ^ ")"
-  | ImplPexp(op, fg, fd) -> "(" ^ prop_to_string(fg) ^ " " ^ tpropCo_to_string(op) ^ " " ^ prop_to_string(fd) ^ ")"
-  | EqualAexp(op, fg, fd) -> "(" ^ aexp_to_string(fg) ^ " " ^ tpropCo_to_string(op) ^ " " ^ aexp_to_string(fd) ^ ")"
-  | InfEqAexp(op, fg, fd) -> "(" ^ aexp_to_string(fg) ^ " " ^ tpropCo_to_string(op) ^ " " ^ aexp_to_string(fd) ^ ")"
+  | TrueP -> "vrai"
+  | FalseP -> "faux"
+  | NegP(op, fd) -> "(" ^ tpropCoN_to_string(op) ^ " " ^ prop_to_string(fd) ^ ")"
+  | BinaryPexp(op, fg, fd) -> "(" ^ prop_to_string(fg) ^ " " ^ tpropCoP_to_string(op) ^ " " ^ prop_to_string(fd) ^ ")"
+  | ImplPexp(op, fg, fd) -> "(" ^ prop_to_string(fg) ^ " " ^ tpropCoPi_to_string(op) ^ " " ^ prop_to_string(fd) ^ ")"
+  | EqualPAexp(op, fg, fd) -> "(" ^ aexp_to_string(fg) ^ " " ^ tpropCoA_to_string(op) ^ " " ^ aexp_to_string(fd) ^ ")"
+  | InfPEqAexp(op, fg, fd) -> "(" ^ aexp_to_string(fg) ^ " " ^ tpropCoA_to_string(op) ^ " " ^ aexp_to_string(fd) ^ ")"
 ;;
 
 prop_to_string(exp30);;
@@ -339,38 +410,50 @@ prop_to_string(exp38);;
 prop_to_string(exp39);;
 prop_to_string(exp39b);;
 
-(*1.4.2 Interpr�tation *)
+(*1.4.2 Interprétation *)
 let rec pinterp(pexp, list_valuation) =
   begin match pexp with
-  | True -> true
-  | False -> false
-  | Neg(op, pexpP) ->
+  | TrueP -> true
+  | FalseP -> false
+  | NegP(op, pexpP) ->
      begin match pexpP with
-     | True -> false
-     | False -> true
+     | TrueP -> false
+     | FalseP -> true
      | _ -> if((pinterp(pexpP, list_valuation)) == true) then false else true
      end
   | BinaryPexp(op, fg, fd) ->
-     begin match fg, fd with
-     | True, True -> true
-     | True, False -> false
-     | True, _ -> if((pinterp(fd, list_valuation)) == true) then true else false
-     | False, True -> false
-     | False, False -> false
-     | False, _ -> false
-     | _ , True -> if((pinterp(fg, list_valuation)) == true) then true else false
-     | _, False -> false
-     | _, _ -> if( (pinterp(fd, list_valuation)) == true) then (pinterp(fg, list_valuation)) else false
+     begin match op with
+     | Or -> 
+        begin match fg, fd with
+        | TrueP, _ -> true
+        | _, TrueP -> true
+        | FalseP, FalseP -> false
+        | FalseP, _ -> if( (pinterp(fd, list_valuation)) == true) then true else false
+        | _ , FalseP -> if((pinterp(fg, list_valuation)) == true) then true else false
+        | _, _ -> if( (pinterp(fd, list_valuation)) == true) then true else  (pinterp(fg, list_valuation))
+        end
+     | And ->
+        begin match fg, fd with
+        | TrueP, TrueP -> true
+        | TrueP, FalseP -> false
+        | TrueP, _ -> if((pinterp(fd, list_valuation)) == true) then true else false
+        | FalseP, TrueP -> false
+        | FalseP, FalseP -> false
+        | FalseP, _ -> false
+        | _ , TrueP -> if((pinterp(fg, list_valuation)) == true) then true else false
+        | _, FalseP -> false
+        | _, _ -> if( (pinterp(fd, list_valuation)) == true) then (pinterp(fg, list_valuation)) else false
+        end
      end
   | ImplPexp(co, p1, p2) -> if(pinterp(p1, list_valuation) == true) then pinterp(p2, list_valuation) else true
-  | EqualAexp(op, fg, fd) ->
+  | EqualPAexp(op, fg, fd) ->
      begin match fg, fd with
      | Cst(s1), Cst(s2) -> if(s1 == s2) then true else false
      | Var(s1), Cst(s2) -> if((ainterp_bis(s1, list_valuation)) == s2) then true else false
      | Cst(s1), Var(s2) -> if((ainterp_bis(s2, list_valuation)) == s1) then true else false
      | _, _ -> if( (ainterp(fg, list_valuation)) == (ainterp(fd, list_valuation))) then true else false
      end
-  | InfEqAexp(op, fg, fd) ->
+  | InfPEqAexp(op, fg, fd) ->
      begin match fg, fd with
      | Cst(s1), Cst(s2) -> if(s1 <= s2) then true else false
      | Var(s1), Cst(s2) -> if((ainterp_bis(s1, list_valuation)) <= s2) then true else false
@@ -395,42 +478,63 @@ pinterp(exp39, valuaP);;
 pinterp(exp39b, valuaP);;
 
 (*1.4.3 Substitutions *)
-let psubst name aexp pexp =
+let rec psubst name aexp pexp =
   begin match pexp with
-  | True -> True
-  | False -> False
-  | Neg(co, prop) -> 
-  | BinaryPexp(cp, p1, p2) ->
-  | ImplPexp(co, p1, p2) ->
-  | EqualAexp(co, aexp1, aexp2) ->
-  | InfEqAexp(co, aexp1, aexp2) -> 
+  | TrueP -> TrueP
+  | FalseP -> FalseP
+  | NegP(co, prop) -> NegP(co, (psubst name aexp prop))
+  | BinaryPexp(co, p1, p2) -> BinaryPexp(co, (psubst name aexp p1), (psubst name aexp p2))
+  | ImplPexp(co, p1, p2) -> ImplPexp(co, (psubst name aexp p1), (psubst name aexp p2))
+  | EqualPAexp(co, aexp1, aexp2) -> EqualPAexp(co, (asubst name aexp aexp1), (asubst name aexp aexp2))
+  | InfPEqAexp(co, aexp1, aexp2) -> InfPEqAexp(co, (asubst name aexp aexp1), (asubst name aexp aexp2))
   end
 ;;
 
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp30));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp31));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp32));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp33));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp34));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp35));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp36));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp37));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp38));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp39));;
-prop_to_string(psubst('x', (Binary(Mult, Cst(3), Var('y'))), exp39b));;
+let aexpTest = Binary(Mult, Cst(3), Var('y'));;
+let aexpTest2 = Binary(Add, Var('k'), Cst(2));;
 
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp30));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp31));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp32));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp33));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp34));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp35));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp36));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp37));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp38));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp39));;
-prop_to_string(psubst('y', (Binary(Add, Var('k'), Cst(2))), exp39b));;
+prop_to_string((psubst 'x' aexpTest exp30));;
+prop_to_string((psubst 'x' aexpTest exp31));;
+prop_to_string((psubst 'x' aexpTest exp32));;
+prop_to_string((psubst 'x' aexpTest exp33));;
+prop_to_string((psubst 'x' aexpTest exp34));;
+prop_to_string((psubst 'x' aexpTest exp35));;
+prop_to_string((psubst 'x' aexpTest exp36));;
+prop_to_string((psubst 'x' aexpTest exp37));;
+prop_to_string((psubst 'x' aexpTest exp38));;
+prop_to_string((psubst 'x' aexpTest exp39));;
+prop_to_string((psubst 'x' aexpTest exp39b));;
+
+prop_to_string((psubst 'y' aexpTest2 exp30));;
+prop_to_string((psubst 'y' aexpTest2 exp31));;
+prop_to_string((psubst 'y' aexpTest2 exp32));;
+prop_to_string((psubst 'y' aexpTest2 exp33));;
+prop_to_string((psubst 'y' aexpTest2 exp34));;
+prop_to_string((psubst 'y' aexpTest2 exp35));;
+prop_to_string((psubst 'y' aexpTest2 exp36));;
+prop_to_string((psubst 'y' aexpTest2 exp37));;
+prop_to_string((psubst 'y' aexpTest2 exp38));;
+prop_to_string((psubst 'y' aexpTest2 exp39));;
+prop_to_string((psubst 'y' aexpTest2 exp39b));;
 
 (*1.4.4 Les triplets de Hoare *)
+type hoare_triple =
+  | HOARET of tprop * prog * tprop
+;;
 
-(*1.4.5 Validit� d'un triplet de Hoare *)
+
+let tpHoare1 = ;;
+let tpHoare1 = ;;
+let tpHoare1 = ;;
+let tpHoare1 = ;;
+
+. Donnez un type hoare_triple dont les valeurs représentent un triplet de
+Hoare.
+x Question 9. À l’aide du type hoare_triple écrivez les triplets de Hoare suivants :
+• {x = 2} skip {x = 2}
+• {x = 2} x := 3 {x ≤ 3}
+• {True} if x <= 0 then r := 0-x else r := x {0 <= r}
+• {in = 5 et out = 1} fact {in = 0 et out = 120} où fact est votre programme de calcul
+de la factorielle de la variable in qui range le résultat dans la variable out
+
+(*1.4.5 Validité d'un triplet de Hoare *)
