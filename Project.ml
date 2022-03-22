@@ -290,32 +290,35 @@ let add n =
 
 selfcompose(add, 10);;
 
-let create_valuation name n =
-  [(name, n)]
+let rec valuation_change(name, n, list_valuation) =
+  begin match list_valuation with
+  | [] -> [(name, n)]
+  | (x,y)::tl ->
+     if name = x
+     then [(name,n)]@tl
+     else [(x,y)]@(valuation_change(name, n, tl)) 
+  end
 ;;
 
-let rec exec_bis prog list_valuation list =
+let rec exec(prog, list_valuation) =
   match prog with
   | Skip -> list_valuation
   | Affect(aexp1, affect, aexp2) ->
      begin match aexp1 with
-     | Var(v) -> list@(create_valuation v (ainterp(aexp2,list_valuation)))
-     | _ -> list@(create_valuation 'p' (ainterp(aexp2, list_valuation)))
+     | Var(v) -> valuation_change(v, (ainterp(aexp2,list_valuation)), list_valuation)
+     | _ -> valuation_change('p', (ainterp(aexp2,list_valuation)), list_valuation)
      end
-  | Seq(prog1, prog2) -> list@(exec_bis prog1 list_valuation list)@(exec_bis prog2 list_valuation list)
-  | Condition(cond1, bexp, cond2, progThen, cond3, progElse) -> if(binterp(bexp, list_valuation)) then list@(exec_bis progThen list_valuation list) else list@(exec_bis progElse list_valuation list)
-  | Repeat(loop1, aexp, loop2, prog, loop3) -> list@selfcompose((exec_bis prog list_valuation list), (ainterp(aexp,list_valuation)))
-;;
-
-let exec prog list_valuation =
-  exec_bis prog list_valuation []
+  | Seq(prog1, prog2) -> list_valuation@(exec(prog1, list_valuation))@(exec(prog2, list_valuation))
+  | Condition(cond1, bexp, cond2, progThen, cond3, progElse) -> if(binterp(bexp, list_valuation)) then list_valuation@(exec(progThen, list_valuation)) else list_valuation@(exec(progElse, list_valuation))
+  | Repeat(loop1, aexp, loop2, prog, loop3) -> list_valuation@selfcompose(exec(prog, list_valuation), (ainterp(aexp,list_valuation)))
 ;;
 
 let prog_facto =
   Repeat(REPEAT, Var('n'), DO, Seq(Affect(Var('x'), AFFECT, Binary(Mult, Var('x'), Var('n'))), Affect(Var('n'), AFFECT, Binary(Minus, Var('n'), Cst(1)))), OD)
 ;;
 
-exec prog_facto [('x', 1);('n', 5)];;
+let valuafb = [('x', 1);('n', 5)];;
+exec(prog_facto, valuafb);;
 
 let prog_fibo =
   Repeat(REPEAT, Var('n'), DO, Condition(IF, InfEqAexp(InfEqual, Var('n'), Cst(1)), THEN,
