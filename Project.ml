@@ -311,17 +311,11 @@ let exec prog list_valuation =
   exec_bis prog list_valuation []
 ;;
 
-let rec get_val name list_valuation =
-  match list_valuation with
-  | [] -> 0
-  | (x,y)::tl -> if (x == name) then y else get_val name tl
-;;
-
 let prog_facto =
-  Repeat(REPEAT, Var('n'), DO, Seq(Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Var('n'))), Affect(Var('n'), AFFECT, Binary(Minus, Var('n'), Cst(1)))), OD)
+  Repeat(REPEAT, Var('n'), DO, Seq(Affect(Var('x'), AFFECT, Binary(Mult, Var('x'), Var('n'))), Affect(Var('n'), AFFECT, Binary(Minus, Var('n'), Cst(1)))), OD)
 ;;
 
-exec prog_facto [('x', 0);('n', 5)];;
+exec prog_facto [('x', 1);('n', 5)];;
 
 let prog_fibo =
   Repeat(REPEAT, Var('n'), DO, Condition(IF, InfEqAexp(InfEqual, Var('n'), Cst(1)), THEN,
@@ -329,10 +323,7 @@ let prog_fibo =
                                               Seq(Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Var('n'))), Affect(Var('n'), AFFECT, Binary(Minus, Var('n'), Cst(1))))), OD)
 ;;
 
-let fibo =
-  prog_fibo [('x', 0);('n', 9)]
-;;
-
+exec  prog_fibo [('x', 0);('n', 9)];;
 
 (* 1. 4 Triplets de Hoare et validit *)
 (*1.4.1 Syntaxe abstraite des formules de la logique des propositions *)
