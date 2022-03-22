@@ -1,5 +1,4 @@
 open List;;
-
 (*1.1 Expressions arithmetiques*)
 (*1.1.1 Syntaxe abstraite *)
 type operator = | Add | Minus | Mult;;
@@ -40,7 +39,7 @@ aexp_to_string(exp6);;
 aexp_to_string(exp7);;
 aexp_to_string(exp8);;
 
-(*1.1.2 Interprétation*)
+(*1.1.2 Interprtation*)
 type valuation = (char * int) list;;
 
 let ainterp_ter x y op =
@@ -96,10 +95,10 @@ let rec asubst name aexp1 aexp2 =
 aexp_to_string((asubst 'x' (Cst(5)) exp5));;
 aexp_to_string((asubst 'y' (Binary(Add, Var('z'), Cst(2))) exp7));;
 
-(*1.2 Les expressions booléennes*)
+(*1.2 Les expressions boolennes*)
 (*1.2.1 Syntaxe abstraite*)
 type connectorN = | Not;;
-type connectorAexp = | Equal | InfEqual;; 
+type connectorAexp = | Equal | InfEqual;;
 type connectorBexp = | And | Or;;
 type bexp =
   | True
@@ -158,7 +157,7 @@ bexp_to_string(exp18);;
 bexp_to_string(exp19);;
 
 
-(*1.2.1 Interprétation *)
+(*1.2.1 Interprtation *)
 let rec binterp(bexp, list_valuation) =
   begin match bexp with
   | True -> true
@@ -209,7 +208,7 @@ let rec binterp(bexp, list_valuation) =
      end
   end
 ;;
-²
+
 let valuaB = [('x', 7);('y', 3)];;
 
 binterp(exp11, valuaB);;
@@ -228,7 +227,6 @@ type affect = | AFFECT;;
 type cond = | IF | THEN | ELSE;;
 type loop = | REPEAT | DO | OD;;
 type prog =
-  | Cal of aexp
   | Skip
   | Affect of aexp * affect * aexp
   | Seq of prog * prog
@@ -264,7 +262,6 @@ let loop_to_string loop =
 
 let rec prog_to_string prog =
   match prog with
-  | Cal(aexp) -> aexp_to_string(aexp)
   | Skip -> "skip"
   | Affect(aexp1, affect, aexp2) -> aexp_to_string(aexp1) ^ " " ^ affect_to_string(affect) ^ " " ^ aexp_to_string(aexp2)
   | Seq(p1, p2) -> prog_to_string(p1)  ^ " " ^ prog_to_string(p2)
@@ -280,7 +277,7 @@ prog_to_string(exp25);;
 prog_to_string(exp26);;
 
 
-(*1.3.2 Interprétation *)
+(*1.3.2 Interprtation *)
 let rec selfcompose(func, n) =
   if (n == 0)
   then func
@@ -297,10 +294,8 @@ let create_valuation name n =
   [(name, n)]
 ;;
 
-
 let rec exec_bis prog list_valuation list =
   match prog with
-  | Cal(aexp) -> list_valuation
   | Skip -> list_valuation
   | Affect(aexp1, affect, aexp2) ->
      begin match aexp1 with
@@ -316,29 +311,32 @@ let exec prog list_valuation =
   exec_bis prog list_valuation []
 ;;
 
-let rec facto n =
-  if(n == 1)
-  then 1
-  else n * (facto n-1)
+let rec get_val name list_valuation =
+  match list_valuation with
+  | [] -> 0
+  | (x,y)::tl -> if (x == name) then y else get_val name tl
 ;;
 
-Condition(IF,  EqualAexp(Equal, Cst(n), Cst(0)), THEN, , ELSE,)
-
-let prog_facto n =
-  Repeat(REPEAT, Cst(n), DO, Seq(Affect(Var('x'), AFFECT, ), Affect()),OD)
-  Condition(IF, EqualAexp(Equal, Cst(n), Cst(0)), THEN, Cst(1), ELSE, prog_facto Cst(n-1))
+let prog_facto =
+  Repeat(REPEAT, Var('n'), DO, Seq(Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Var('n'))), Affect(Var('n'), AFFECT, Binary(Minus, Var('n'), Cst(1)))), OD)
 ;;
 
-x Question 7.
-• Écrivez un programme qui calcule la factorielle d’un entier positif et exécutez-le pour
-calculer la factorielle de 5
-• Écrivez un programme qui calcule le nième nombre de la suite de Fibonacci (la version
-itérative) et exécutez-le pour calculer le 8ième nombre de cette suite. 
+exec prog_facto [('x', 0);('n', 5)];;
+
+let prog_fibo =
+  Repeat(REPEAT, Var('n'), DO, Condition(IF, InfEqAexp(InfEqual, Var('n'), Cst(1)), THEN,
+                                       Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Cst(1))), ELSE,
+                                              Seq(Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Var('n'))), Affect(Var('n'), AFFECT, Binary(Minus, Var('n'), Cst(1))))), OD)
+;;
+
+let fibo =
+  prog_fibo [('x', 0);('n', 9)]
+;;
 
 
-(* 1. 4 Triplets de Hoare et validité *)
+(* 1. 4 Triplets de Hoare et validit *)
 (*1.4.1 Syntaxe abstraite des formules de la logique des propositions *)
-(* Pour évité un double match je vais simplement recrée un type en entier *)
+(* Pour vit un double match je vais simplement recre un type en entier *)
 type tpropCoN = | Not;;
 type tpropCoAexp = | Equal | InfEqual;;
 type tpropCoPexp = | And | Or;;
@@ -410,7 +408,7 @@ prop_to_string(exp38);;
 prop_to_string(exp39);;
 prop_to_string(exp39b);;
 
-(*1.4.2 Interprétation *)
+(*1.4.2 Interprtation *)
 let rec pinterp(pexp, list_valuation) =
   begin match pexp with
   | TrueP -> true
@@ -522,19 +520,36 @@ type hoare_triple =
   | HOARET of tprop * prog * tprop
 ;;
 
+let tpHoare1 = HOARET(EqualPAexp(Equal, Var('x'), Cst(2)), Skip, EqualPAexp(Equal, Var('x'), Cst(2)));;
+let tpHoare2 = HOARET(EqualPAexp(Equal, Var('x'), Cst(2)), Affect(Var('x'), AFFECT, Cst(3)), InfPEqAexp(InfEqual, Var('x'), Cst(3)));;
+let tpHoare3 = HOARET(TrueP, Condition(
+                                IF,
+                                InfEqAexp(InfEqual, Var('x'), Cst(0)),
+                                THEN,
+                                Affect(Var('r'), AFFECT, Binary(Minus, Cst(0), Var('x'))),
+                                ELSE,
+                                Affect(Var('r'), AFFECT, Var('x'))),
+                      InfPEqAexp(InfEqual, Cst(0), Var('r'))
+                 );;
+(*Ini in est x et out est y*)                                                                            
+let tpHoare4 = HOARET(BinaryPexp(And, EqualPAexp(Equal, Var('x'), Cst(5)), EqualPAexp(Equal, Var('y'), Cst(1))),
+                      prog_facto,
+                      BinaryPexp(And, EqualPAexp(Equal, Var('x'), Cst(0)), EqualPAexp(Equal, Var('y'), Cst(120)))
+                 );;
 
-let tpHoare1 = ;;
-let tpHoare1 = ;;
-let tpHoare1 = ;;
-let tpHoare1 = ;;
+(*1.4.5 Validite d'un triplet de Hoare *)
+let htvalid_test(tpHoaret, list_valuation) =
+  match tpHoaret with
+  | HOARET(tprop1, prog, tprop2) ->
+     if (pinterp(tprop1, list_valuation) = true)
+     then
+       if (pinterp(tprop2, (list_valuation@exec prog list_valuation)) = true)
+       then true
+       else false
+     else false
+;;
 
-. Donnez un type hoare_triple dont les valeurs représentent un triplet de
-Hoare.
-x Question 9. À l’aide du type hoare_triple écrivez les triplets de Hoare suivants :
-• {x = 2} skip {x = 2}
-• {x = 2} x := 3 {x ≤ 3}
-• {True} if x <= 0 then r := 0-x else r := x {0 <= r}
-• {in = 5 et out = 1} fact {in = 0 et out = 120} où fact est votre programme de calcul
-de la factorielle de la variable in qui range le résultat dans la variable out
-
-(*1.4.5 Validité d'un triplet de Hoare *)
+htvalid_test(tpHoare1, [('x', 2)]);;
+htvalid_test(tpHoare2, [('x', 2)]);;
+htvalid_test(tpHoare3, [('x', 2);('r', 4)]);;
+htvalid_test(tpHoare4, [('x', 2)]);;
