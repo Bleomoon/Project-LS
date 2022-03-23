@@ -607,40 +607,38 @@ tgoal_print goal2;;
 
 (* 2.2 *)
 
-type intro_tactics =
+type prop_tactics =
 | And_Intro
 | Or_Intro_1
 | Or_Intro_2
 | Impl_Intro
-| Not_Intro
-;;
-
-type elim_tactics = 
-| And_Elim_1
-| And_Elim_2
-| Or_Elim
-| Impl_Elim
-| Not_Elim
+| Not_Intro 
+| And_Elim_1  of string
+| And_Elim_2  of string
+| Or_Elim     of string
+| Impl_Elim   of string * string
+| Not_Elim    of string * string
+| Assume
 | Exact
+| Admit
 ;;
 
 type hoare_tactics =
 | HSkip
 | HAssign
 | HIf
+| HRepeat
+| Hcons
+| HSEq
 ;;
 
-type 
-
-type tactic =
-| Intro_Tactics of intro_tactics
-| Elim_Tactics of elim_tactics
+type ttactic =
+| Prop_tactics of prop_tactics
 | Hoare_Tactics of hoare_tactics
-|
 ;;
 
 
-let and_intro goal =
+let and_intro (goal : tgoal) =
   match goal.conclusion with
   | Hoare hoare     -> failwith "error : is a hoare expression"
   | Formule formule -> (
@@ -648,11 +646,176 @@ let and_intro goal =
     | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
       match type_prop with
       | Or  -> failwith "error : is a or expression"
-      | And -> ( create_goal_with_formule goal.formule ( Formule tprop_1), create_goal_with_formule goal.formule ( Formule tprop_2 ))
+      | And -> [ create_goal_with_formule goal.formule ( Formule tprop_1) ; create_goal_with_formule goal.formule ( Formule tprop_2 ) ]
     )
     | _             -> failwith "error : not a binari  expression"
   )
 ;;
 
-Impl_Intro
-Admit
+let or_intro_1 (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Or  -> [ create_goal_with_formule goal.formule ( Formule tprop_1) ]
+      | And -> failwith "error : is a and expression"
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let or_intro_2 (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Or  -> [ create_goal_with_formule goal.formule ( Formule tprop_2) ]
+      | And -> failwith "error : is a and expression"
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let impl_intro (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | ImplPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Implicit -> [  add_formule_goal tprop_1 (create_goal_with_formule goal.formule ( Formule tprop_2)) ]
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let impl_intro (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | ImplPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Implicit -> [  add_formule_goal tprop_1 (create_goal_with_formule goal.formule ( Formule tprop_2)) ]
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let not_intro (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | NegP (type_prop, tprop) -> (
+      match type_prop with
+      | Not -> [  add_formule_goal tprop (create_goal_with_formule goal.formule ( Formule FalseP)) ]
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let rec search_from_key (list : string list) (s : string) =
+  if list = []
+  then failwith ("error search_from_key : not in list")
+  else
+    match list with
+    | hd :: tl ->
+      if hd = s
+      then 0
+      else search_from_key tl s + 1
+    | _  -> failwith ("error search_from_key")
+;;
+
+let change_nth_formule (formules : (string * tprop) list) (prop : tprop)  (n : int) : (string * tprop) list=
+  match formules with
+  | (h, formprop):: tl ->
+    if n = 0
+    then (h, prop) :: tl
+    else (h, formprop)::change_nth_formule formules prop n-1
+  | _   ->  failwith []
+;;
+
+    
+
+
+let and_elim_1 (goal : tgoal) (s : string) =
+  let n = search_from_key goal.formule s in
+  let formule = nth n goal.formule in
+  match formule with
+    | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Or  -> failwith "error : is a or expression"
+      | And -> [add_formule_goal tprop_1 goal]
+    )
+    | _             -> failwith "error : not a binari  expression"
+;;
+
+let and_elim_2 (goal : tgoal) (s : string) =
+  let n = search_from_key goal.formule s in
+  let formule = nth n goal.formule in
+  match formule with
+  | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+    match type_prop with
+    | Or  -> failwith "error : is a or expression"
+    | And -> [add_formule_goal tprop_2 goal]
+  )
+  | _             -> failwith "error : not a binari  expression"
+;;
+
+let or_elim (goal : tgoal) (s : string) =
+  let n = search_from_key goal.formule s in
+  let formule = nth n goal.formule in
+  match formule with
+  | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+    match type_prop with
+    | Or  -> 
+      let newform = change_nth_formule goal.formule tprop_1 n in
+      [create_goal_with_formule newform goal.conclusion ; create_goal_with_formule newform goal.conclusion]
+    | And -> failwith "error : is a and expression"
+  )
+  | _             -> failwith "error : not a binari  expression"
+;;
+
+(*
+let apply_hoare_tactic (goal : tgoal) (tactic : ttactic) =
+  match tactic with
+  | Hoare_Tactics hoare -> (
+    match hoare with
+    | HSkip   ->
+    | HAssign ->
+    | HIf     ->
+    | HRepeat ->
+    | Hcons   ->
+    | HSEq    ->
+  )
+  | Prop_tactics intro -> apply_prop_tactic goal tactic
+;;
+
+*)
+let apply_prop_tactic (goal : tgoal) (tactic : ttactic) =
+  match tactic with
+  | Prop_tactics prop -> (
+    match prop with
+    | And_Intro         ->  and_intro   goal
+    | Or_Intro_1        ->  or_intro_1  goal
+    | Or_Intro_2        ->  or_intro_2  goal
+    | Impl_Intro        ->  impl_intro  goal
+    | Not_Intro         ->  not_intro   goal
+    | And_Elim_1 h1     ->  and_elim_1  goal h1
+    | And_Elim_2 h1     ->  and_elim_2  goal h1
+    | Or_Elim    h1     ->  or_elim     goal h1
+    | Impl_Elim  (h1,h2)->  
+    | Not_Elim    ->  
+    | Assume      ->  
+    | Exact       ->  
+    | Admit       ->  
+  )
+  (*|  Hoare_Tactics hoare -> apply_hoare_tactic goal tactic*)
+;;
+
+
