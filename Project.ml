@@ -557,7 +557,7 @@ type tconclusion =
 type tgoal = { 
   formule : (string * tprop) list; 
   conclusion : tconclusion
-  };;
+};;
 
 let hoare_triple_to_string hoare_triple =
   match hoare_triple with
@@ -779,18 +779,124 @@ let or_elim (goal : tgoal) (s : string) =
   | _             -> failwith "error : not a binari  expression"
 ;;
 
-let apply_hoare_tactic (goal : tgoal) (tactic : ttactic) =
-  match tactic with
-  | Hoare_Tactics hoare -> (
-    match hoare with
-    | HSkip   -> 
-    | HAssign ->
-    | HIf     ->
-    | HRepeat ->
-    | Hcons   ->
-    | HSEq    ->
-  )
+let hskip goal tprop1 prog tprop2 list_valuation =
+  begin match prog with
+  | Skip -> if(pinterp(tprop1, list_valuation))
+            then
+              if pinterp(tprop2, list_valuation)
+              then goal
+              else failwith "PostCondition is false"
+            else failwith "Precondition is false"
+  | _ -> failwith "Prog skip not found in HSKIP command"
+  end
+;;
+
+let hif goal tprop1 prog tprop2 list_valuation =
+  begin match prog with
+  | Condition(c1, bexp, c2, prog1, c3, prog2) ->
+     if(pinterp(tprop1, list_valuation) && binterp(bexp, list_valuation))
+     then
+       if pinterp(tprop2, (exec prog1 list_valuation))
+       then bool2prop(prog1)
+       else failwith "PostCondition is false in P /\ b in HIF"
+     else
+       if(pinterp(tprop1, list_valuation) && binterp(Neg(Not, bexp), list_valuation))
+       then
+         if pinterp(tprop2, (exec prog2 list_valuation))
+         then bool2prop(prog1)
+         else failwith "PostCondition is false in P /\ not(b) in HIF"
+       else failwith "Preconfition is false in HIF"
+  | _ -> failwith "Prog condition not found in HIF command"
+  end
+;;
+
+let hassign goal tprop1 prog tprop2 list_valuation =
+    begin match prog with
+  | Affect(aexp1, affect, aexp2) ->
+     if(pinterp(tprop1, list_valuation))
+     then
+       if pinterp(tprop2, (exec prog list_valuation))
+       then true
+       else failwith "PostCondition is false in HASSIGN"
+     else failwith "Preconfition is false in HASSIGN"
+  | _ -> failwith "Prog Affect not found in HASSIGN command"
+  end
+;;
+
+let hrepeat goal tprop1 prog tprop2 list_valuation =
+    begin match prog with
+  | Repeat(loop, aexp, loop2, prog, loop3) ->
+     if(pinterp(tprop1, list_valuation) && binterp(InfEqAexp(InfEqual, aexp, Cst(0)), list_valuation))
+     then
+       if pinterp(tprop2, (exec prog list_valuation))
+       then goal
+       else failwith "PostCondition is false in HREPEAT"
+     else failwith "Preconfition is false in HREPEAT"
+  | _ -> failwith "Prog Repeat not found in HREPEAT command"
+  end
+;;
+
+let hcons goal tprop1 prog tprop2 list_valuation =
+    begin match prog with
+  | Condition(c1, bexp, c2, prog1, c3, prog2) ->
+     if(pinterp(tprop1, list_valuation) && binterp(bexp, list_valuation))
+     then
+       if pinterp(tprop2, (exec prog1 list_valuation))
+       then bool2prop(prog1)
+       else failwith "PostCondition is false in P /\ b in HIF"
+     else
+       if(pinterp(tprop1, list_valuation) && binterp(Neg(Not, bexp), list_valuation))
+       then
+         if pinterp(tprop2, (exec prog2 list_valuation))
+         then bool2prop(prog1)
+         else failwith "PostCondition is false in P /\ not(b) in HIF"
+       else failwith "Preconfition is false in HIF"
+  | _ -> failwith "Prog condition not found in HSKIP command"
+  end
+;;
+
+let hseq goal tprop1 prog tprop2 list_valuation =
+    begin match prog with
+  | Seq(p1, p2) ->
+     if(pinterp(tprop1, list_valuation) && binterp(bexp, list_valuation))
+     then
+       if pinterp(tprop2, (exec prog1 list_valuation))
+       then bool2prop(prog1)
+       else failwith "PostCondition is false in P /\ b in HIF"
+     else
+       if(pinterp(tprop1, list_valuation) && binterp(Neg(Not, bexp), list_valuation))
+       then
+         if pinterp(tprop2, (exec prog2 list_valuation))
+         then bool2prop(prog1)
+         else failwith "PostCondition is false in P /\ not(b) in HIF"
+       else failwith "Preconfition is false in HIF"
+  | _ -> failwith "Prog Seq not found in HSEQ command"
+  end
+;;
+
+let apply_hoare_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
+  begin match tactic with
+  | Hoare_Tactics hoare ->
+     begin match goal with
+     | formule,conclusion ->
+        begin match conclusion with
+        | Hoare(ht) ->
+           begin match ht with
+           | HOARET(t1, p, t2) ->
+               begin match hoare with
+               | HSkip   -> hskip goal t1 p t2 list_valuation
+               | HAssign -> hassign goal t1 p t2 list_valuation
+               | HIf     -> hif goal t1 p t2 list_valuation
+               | HRepeat -> hrepeat goal t1 p t2 list_valuation
+               | Hcons   -> hcons goal t1 p t2 list_valuation
+               | HSEq    -> hseq goal t1 p t2 list_valuation
+               end
+           end
+        | Formule(f) -> failwith "Conclusion must be an Hoare triple in Skip"
+        end
+     end
   | Prop_tactics intro -> apply_prop_tactic goal tactic
+  end
 ;;
 
 
