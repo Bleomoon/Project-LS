@@ -289,11 +289,12 @@ prog_to_string(exp26);;
 
 (*1.3.2 Interprtation *)
 let rec selfcompose func n =
-  begin match n with
-  | 0 ->  fun prog ->  prog
-  | 1 ->  fun prog ->  func prog
-  | _ ->  fun prog ->  func (selfcompose (func) (n-1) prog)
-  end
+  if n = 0
+  then  fun prog ->  prog
+  else
+    if n = 1
+    then fun prog ->  func prog
+    else fun prog ->  func (selfcompose (func) (n-1) prog)
 ;;
 
 let add n = n + 2;;
@@ -604,10 +605,10 @@ let goal1 = create_goal (Formule exp30);;
 let goal2 = add_formule_goal exp30 goal1;;
 tgoal_print goal2;;
 
-(* 2.1.2 *)
+(* 2.1.2 La rgèle de déduction pour la boucle repeat à voir sur pdf *)
 
-(* 2.2 *)
-
+(* 2.1.3 Le langage des tactiques *)
+(* Question 6 *)
 type prop_tactics =
 | And_Intro
 | Or_Intro_1
@@ -638,7 +639,25 @@ type ttactic =
 | Hoare_Tactics of hoare_tactics
 ;;
 
+(* 2.2 Appliquer une tactique à un but *)
 
+(*Question 1*)
+let rec bool2prop bexp =
+  begin match bexp with
+  | True -> TrueP
+  | False -> FalseP
+  | Neg(op, fd) -> NegP(Not, bool2prop(fd))
+  | BinaryBexp(op, fg, fd) ->
+     begin match op with
+     | And -> BinaryPexp(And, bool2prop(fg), bool2prop(fd))
+     | Or -> BinaryPexp(Or, bool2prop(fg), bool2prop(fd))
+     end
+  | EqualAexp(op, fg, fd) -> EqualPAexp(Equal, fg, fd)
+  | InfEqAexp(op, fg, fd) -> InfPEqAexp(InfEqual, fg, fd)
+  end
+;;
+
+(* Question 2 *)
 let and_intro (goal : tgoal) =
   match goal.conclusion with
   | Hoare hoare     -> failwith "error : is a hoare expression"
@@ -779,33 +798,35 @@ let or_elim (goal : tgoal) (s : string) =
   | _             -> failwith "error : not a binari  expression"
 ;;
 
+(* TODO cree la fct qui vérifie q'une tprop est égale à [1/i]I ?? 
+hassign
+hrepeat
+hcons
+hseq
+*)
 let hskip goal tprop1 prog tprop2 list_valuation =
   begin match prog with
   | Skip -> if(pinterp(tprop1, list_valuation))
             then
               if pinterp(tprop2, list_valuation)
-              then goal
+              then []
               else failwith "PostCondition is false"
             else failwith "Precondition is false"
   | _ -> failwith "Prog skip not found in HSKIP command"
   end
 ;;
 
+(* De (p) if b then c1 else c2 (Q) on trouve 2 triple de hoare en + -> (P /\ b) c1 (Q)    (P/\ non(b))c2(Q)*)
 let hif goal tprop1 prog tprop2 list_valuation =
   begin match prog with
   | Condition(c1, bexp, c2, prog1, c3, prog2) ->
-     if(pinterp(tprop1, list_valuation) && binterp(bexp, list_valuation))
-     then
-       if pinterp(tprop2, (exec prog1 list_valuation))
-       then bool2prop(prog1)
-       else failwith "PostCondition is false in P /\ b in HIF"
-     else
-       if(pinterp(tprop1, list_valuation) && binterp(Neg(Not, bexp), list_valuation))
-       then
-         if pinterp(tprop2, (exec prog2 list_valuation))
-         then bool2prop(prog1)
-         else failwith "PostCondition is false in P /\ not(b) in HIF"
-       else failwith "Preconfition is false in HIF"
+     let pb, pnb = (pinterp(tprop1, list_valuation) && binterp(bexp, list_valuation)), (pinterp(tprop1, list_valuation) && binterp(Neg(Not, bexp), list_valuation)) in
+     let qc1, qc2 = pinterp(tprop2, (exec prog1 list_valuation)), pinterp(tprop2, (exec prog2 list_valuation)) in
+     if(pb && qc1) && (pnb && qc2) 
+     then let newform1, newform2 = change_nth_formule goal.formule tprop1 n, change_nth_formule goal.formule tprop2 n in
+          [create_goal_with_formule newform??? (HOARET(BinaryPexp(And, tprop1, pb), prog1, qc1));
+           create_goal_with_formule newform (HOARET(BinaryPexp(And, tprop2, pnb), prog2, qc2))]
+     else failwith "Invalid Hoare in HIF"
   | _ -> failwith "Prog condition not found in HIF command"
   end
 ;;
@@ -892,7 +913,7 @@ let apply_hoare_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
                | HSEq    -> hseq goal t1 p t2 list_valuation
                end
            end
-        | Formule(f) -> failwith "Conclusion must be an Hoare triple in Skip"
+        | Formule(f) -> failwith "Conclusion must be an Hoare triple"
         end
      end
   | Prop_tactics intro -> apply_prop_tactic goal tactic
@@ -920,3 +941,33 @@ let apply_prop_tactic (goal : tgoal) (tactic : ttactic) =
   )
   (*|  Hoare_Tactics hoare -> apply_hoare_tactic goal tactic*)
 ;;
+
+(* 2.2.1 La logique des propositions*)
+(* Question 3*)
+
+
+(* 2.2.2 La logique de Hoare*)
+(* Question 4*)
+let tHoare1 = HOARET(EqualPAexp(Equal, Var('x'), Cst(2)), Skip, EqualPAexp(Equal, Var('x'), Cst(2)));;
+let tHoare2 = HOARET(InfPEqAexp(InfEqual, Binary(Add, Var('y'),Cst(1)), Cst(4)), Affect(Var('y'), AFFECT, Binary(Add, Var('y'), Cst(1))), InfPEqAexp(InfEqual, Var('y'), Cst(4)));;
+let tHoare3 = HOARET(EqualPAexp(Equal, Var('y'), Cst(5)), Affect(Var('x'), AFFECT, Binary(Add, Var('y'), Cst(1))), EqualPAexp(Equal, Var('x'), Cst(6)));;
+let tHoare4 = HOARET(TrueP, Seq(Seq(
+                                    Affect(Var('z'), AFFECT, Var('x')),
+                                    Affect(Var('z'), AFFECT, Binary(Add, Var('z'), Var('y')))),
+                                Affect(Var('u'), AFFECT, Var('z'))),
+                EqualPAexp(Equal, Var('y'), Binary(Add, Var('x'), Var('y'))));;
+let tHoare5 = HOARET(TrueP, Condition(IF, InfEqAexp(InfEqual, Var('v'), Cst(0)), THEN, Affect(Var('r'), AFFECT, Binary(Add, Cst(0), Var('v'))), ELSE, Affect(Var('r'), AFFECT, Var('v'))), InfPEqAexp(InfEqual, Cst(0), Var('r')));;
+let tHoare6 = HOARET(EqualPAexp(Equal, Var('x'), Var('y')),
+                     Repeat(REPEAT, Cst(10), DO, Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Cst(1))), OD),
+                     EqualPAexp(Equal, Var('x'), Binary(Add, Var('y'), Cst(10))));;
+
+(*Question 5*)
+htvalid_test(tHoare1, [('x', 2)]);;
+htvalid_test(tHoare2, [('y', 2)]);;
+htvalid_test(tHoare3, [('x', 0);('y', 5)]);;
+htvalid_test(tHoare4, [('x', 5);('y',1);]);;
+
+htvalid_test(tHoare5, [('v', 0)]);;
+htvalid_test(tHoare5, [('v', 1)]);;
+
+htvalid_test(tHoare6, [('x', 5);('y',5)]);;
