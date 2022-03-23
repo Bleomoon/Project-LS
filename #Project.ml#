@@ -308,7 +308,7 @@ let rec exec(prog, list_valuation) =
      | Var(v) -> valuation_change(v, (ainterp(aexp2,list_valuation)), list_valuation)
      | _ -> valuation_change('p', (ainterp(aexp2,list_valuation)), list_valuation)
      end
-  | Seq(prog1, prog2) -> (exec(prog1, list_valuation))@(exec(prog2, list_valuation))
+  | Seq(prog1, prog2) -> (exec(prog2, (exec(prog1, list_valuation))))
   | Condition(cond1, bexp, cond2, progThen, cond3, progElse) -> if(binterp(bexp, list_valuation)) then (exec(progThen, list_valuation)) else (exec(progElse, list_valuation))
   | Repeat(loop1, aexp, loop2, prog, loop3) -> selfcompose(exec(prog, list_valuation), (ainterp(aexp,list_valuation)))
 ;;
@@ -318,7 +318,7 @@ let prog_facto =
 ;;
 
 
-let valuafb = ref[ref('x', 1);ref('n', 5)];;
+let valuafb = [('x', 1);('n', 5)];;
 
 valuation_change('x', 9, valuafb);; 
 exec(prog_facto, valuafb);;
