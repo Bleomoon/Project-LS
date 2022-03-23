@@ -42,6 +42,16 @@ aexp_to_string(exp8);;
 (*1.1.2 Interprtation*)
 type valuation = (char * int) list;;
 
+let rec valuation_change(name, n, list_valuation)   =
+  begin match list_valuation with
+  | [] -> [(name, n)]
+  | ((x,y)::tl) ->
+     if name = x
+     then ((name,n)::tl)
+     else (x,y)::(valuation_change(name, n, tl)) 
+  end
+;;
+
 let ainterp_ter x y op =
   match op with
   | Add -> x + y
@@ -51,7 +61,7 @@ let ainterp_ter x y op =
 
 let rec ainterp_bis(name, list) : int =
   begin match list with
-  | (x,y)::[] -> if(name = x) then y else 0
+  | [] -> failwith "Could not interpret aexp"
   | (x,y)::tl -> if(name = x) then y else ainterp_bis(name, tl)
   end
 ;;
@@ -289,16 +299,6 @@ let rec selfcompose func n =
 let add n = n + 2;;
 let calul = (selfcompose add 10) 0;;
 
-let rec valuation_change(name, n, list_valuation)   =
-  begin match list_valuation with
-  | [] -> [(name, n)]
-  | ((x,y)::tl) ->
-     if name = x
-     then ((name,n)::tl)
-     else (x,y)::(valuation_change(name, n, tl)) 
-  end
-;;
-
 let rec exec prog list_valuation =
   match prog with
     Repeat(loop1, aexp, loop2, prog, loop3) ->
@@ -318,15 +318,14 @@ let prog_facto =
   Repeat(REPEAT, Var('n'), DO, Seq(Affect(Var('x'), AFFECT, Binary(Mult, Var('x'), Var('n'))), Affect(Var('n'), AFFECT, Binary(Minus, Var('n'), Cst(1)))), OD)
 ;;
 
-
-let valuafb = [('x', 1);('n', 5)];;
-exec prog_facto valuafb;;
+let valuafacto = [('x', 1);('n', 5)];;
+exec prog_facto valuafacto;;
 
 let prog_fibo =
   Repeat(REPEAT, Var('n'), DO, Seq(Affect(Var('p'), AFFECT, Var('x')), Seq(Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Var('y'))), Affect(Var('y'), AFFECT, Var('p')))), OD)
 ;;
-
-exec  prog_fibo [('x', 0);('n', 9); ('y', 1)];;
+let valuafibo = [('x', 0);('n', 9); ('y', 1)];;
+exec  prog_fibo valuafibo;;
 
 (* 1. 4 Triplets de Hoare et validit *)
 (*1.4.1 Syntaxe abstraite des formules de la logique des propositions *)
@@ -547,3 +546,271 @@ htvalid_test(tpHoare1, [('x', 2)]);;
 htvalid_test(tpHoare2, [('x', 2)]);;
 htvalid_test(tpHoare3, [('x', 2);('r', 4)]);;
 htvalid_test(tpHoare4, [('n', 5);('x',1)]);;
+
+(* 2.1.1 *)
+
+type tconclusion =
+| Hoare of hoare_triple
+| Formule of tprop
+;;
+
+type tgoal = { 
+  formule : (string * tprop) list; 
+  conclusion : tconclusion
+  };;
+
+let hoare_triple_to_string hoare_triple =
+  match hoare_triple with
+  | HOARET (propA, prog, propB) ->  prop_to_string propA ^ " " ^ prog_to_string prog ^ " " ^ prop_to_string propB
+;;
+
+let rec print_formule_list (formule : (string * tprop) list) : unit =
+  if( formule != [])
+  then
+      match formule with
+      | (s,f)::tl ->  print_formule_list tl;
+                      print_endline (s ^" : "^ prop_to_string f)
+      | [] -> failwith "Formule is empty"
+;;
+
+let tgoal_print goal =
+  print_formule_list goal.formule;
+  print_endline "================================";
+  match goal.conclusion with
+  | Hoare hoare     -> print_endline (hoare_triple_to_string hoare)
+  | Formule formule -> print_endline (prop_to_string formule) 
+;;
+
+let fresh_ident =
+  let prefix = " H" and count = ref 0
+  in
+  function () -> ( count := ! count + 1 ;
+  prefix ^ ( string_of_int (! count )))
+;;
+
+let add_formule_goal (f : tprop) (g : tgoal) : tgoal =
+  { formule = (fresh_ident(), f) :: g.formule  ; conclusion = g.conclusion}
+;;
+
+let create_goal (conc : tconclusion) : tgoal =
+  { formule = [] ; conclusion = conc}
+;;
+
+let create_goal_with_formule form conc : tgoal =
+  { formule = form ;  conclusion = conc}
+;;
+
+let goal1 = create_goal (Formule exp30);;
+let goal2 = add_formule_goal exp30 goal1;;
+tgoal_print goal2;;
+
+(* 2.1.2 *)
+
+(* 2.2 *)
+
+type prop_tactics =
+| And_Intro
+| Or_Intro_1
+| Or_Intro_2
+| Impl_Intro
+| Not_Intro 
+| And_Elim_1  of string
+| And_Elim_2  of string
+| Or_Elim     of string
+| Impl_Elim   of string * string
+| Not_Elim    of string * string
+| Assume
+| Exact
+| Admit
+;;
+
+type hoare_tactics =
+| HSkip
+| HAssign
+| HIf
+| HRepeat
+| Hcons
+| HSEq
+;;
+
+type ttactic =
+| Prop_tactics of prop_tactics
+| Hoare_Tactics of hoare_tactics
+;;
+
+
+let and_intro (goal : tgoal) =
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Or  -> failwith "error : is a or expression"
+      | And -> [ create_goal_with_formule goal.formule ( Formule tprop_1) ; create_goal_with_formule goal.formule ( Formule tprop_2 ) ]
+    )
+    | _             -> failwith "error : not a binari  expression"
+  )
+;;
+
+let or_intro_1 (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Or  -> [ create_goal_with_formule goal.formule ( Formule tprop_1) ]
+      | And -> failwith "error : is a and expression"
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let or_intro_2 (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Or  -> [ create_goal_with_formule goal.formule ( Formule tprop_2) ]
+      | And -> failwith "error : is a and expression"
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let impl_intro (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | ImplPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Implicit -> [  add_formule_goal tprop_1 (create_goal_with_formule goal.formule ( Formule tprop_2)) ]
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let impl_intro (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | ImplPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Implicit -> [  add_formule_goal tprop_1 (create_goal_with_formule goal.formule ( Formule tprop_2)) ]
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let not_intro (goal : tgoal) = 
+  match goal.conclusion with
+  | Hoare hoare     -> failwith "error : is a hoare expression"
+  | Formule formule -> (
+    match formule with
+    | NegP (type_prop, tprop) -> (
+      match type_prop with
+      | Not -> [  add_formule_goal tprop (create_goal_with_formule goal.formule ( Formule FalseP)) ]
+    )
+    | _ -> failwith "error : not a binari  expression"
+  )
+;;
+
+let rec search_from_key (list : string list) (s : string) =
+  if list = []
+  then failwith ("error search_from_key : not in list")
+  else
+    match list with
+    | hd :: tl ->
+      if hd = s
+      then 0
+      else search_from_key tl s + 1
+    | _  -> failwith ("error search_from_key")
+;;
+
+let rec change_nth_formule (formules : (string * tprop) list) (prop : tprop)  (n : int) : (string * tprop) list=
+  match formules with
+  | (h, formprop):: tl ->
+    if n = 0
+    then (h, prop) :: tl
+    else (h, formprop)::change_nth_formule formules prop n-1
+  | _   ->  failwith []
+;;
+
+let and_elim_1 (goal : tgoal) (s : string) =
+  let n = search_from_key goal.formule s in
+  let formule = nth n goal.formule in
+  match formule with
+    | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+      match type_prop with
+      | Or  -> failwith "error : is a or expression"
+      | And -> [add_formule_goal tprop_1 goal]
+    )
+    | _             -> failwith "error : not a binari  expression"
+;;
+
+let and_elim_2 (goal : tgoal) (s : string) =
+  let n = search_from_key goal.formule s in
+  let formule = nth n goal.formule in
+  match formule with
+  | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+    match type_prop with
+    | Or  -> failwith "error : is a or expression"
+    | And -> [add_formule_goal tprop_2 goal]
+  )
+  | _             -> failwith "error : not a binari  expression"
+;;
+
+let or_elim (goal : tgoal) (s : string) =
+  let n = search_from_key goal.formule s in
+  let formule = nth n goal.formule in
+  match formule with
+  | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
+    match type_prop with
+    | Or  -> 
+      let newform = change_nth_formule goal.formule tprop_1 n in
+      [create_goal_with_formule newform goal.conclusion ; create_goal_with_formule newform goal.conclusion]
+    | And -> failwith "error : is a and expression"
+  )
+  | _             -> failwith "error : not a binari  expression"
+;;
+
+let apply_hoare_tactic (goal : tgoal) (tactic : ttactic) =
+  match tactic with
+  | Hoare_Tactics hoare -> (
+    match hoare with
+    | HSkip   -> 
+    | HAssign ->
+    | HIf     ->
+    | HRepeat ->
+    | Hcons   ->
+    | HSEq    ->
+  )
+  | Prop_tactics intro -> apply_prop_tactic goal tactic
+;;
+
+
+let apply_prop_tactic (goal : tgoal) (tactic : ttactic) =
+  match tactic with
+  | Prop_tactics prop -> (
+    match prop with
+    | And_Intro         ->  and_intro   goal
+    | Or_Intro_1        ->  or_intro_1  goal
+    | Or_Intro_2        ->  or_intro_2  goal
+    | Impl_Intro        ->  impl_intro  goal
+    | Not_Intro         ->  not_intro   goal
+    | And_Elim_1 h1     ->  and_elim_1  goal h1
+    | And_Elim_2 h1     ->  and_elim_2  goal h1
+    | Or_Elim    h1     ->  or_elim     goal h1
+    | Impl_Elim  (h1,h2)->  
+    | Not_Elim    ->  
+    | Assume      ->  
+    | Exact       ->  
+    | Admit       ->  
+  )
+  (*|  Hoare_Tactics hoare -> apply_hoare_tactic goal tactic*)
+;;
