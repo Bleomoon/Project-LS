@@ -323,12 +323,10 @@ let valuafb = [('x', 1);('n', 5)];;
 exec prog_facto valuafb;;
 
 let prog_fibo =
-  Repeat(REPEAT, Var('n'), DO, Condition(IF, InfEqAexp(InfEqual, Var('n'), Cst(1)), THEN,
-                                       Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Cst(1))), ELSE,
-                                              Seq(Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Var('n'))), Affect(Var('n'), AFFECT, Binary(Minus, Var('n'), Cst(1))))), OD)
+  Repeat(REPEAT, Var('n'), DO, Seq(Affect(Var('p'), AFFECT, Var('x')), Seq(Affect(Var('x'), AFFECT, Binary(Add, Var('x'), Var('y'))), Affect(Var('y'), AFFECT, Var('p')))), OD)
 ;;
 
-exec  prog_fibo [('x', 0);('n', 9)];;
+exec  prog_fibo [('x', 0);('n', 9); ('y', 1)];;
 
 (* 1. 4 Triplets de Hoare et validit *)
 (*1.4.1 Syntaxe abstraite des formules de la logique des propositions *)
@@ -527,10 +525,10 @@ let tpHoare3 = HOARET(TrueP, Condition(
                                 Affect(Var('r'), AFFECT, Var('x'))),
                       InfPEqAexp(InfEqual, Cst(0), Var('r'))
                  );;
-(*Ini in est x et out est y*)                                                                            
-let tpHoare4 = HOARET(BinaryPexp(And, EqualPAexp(Equal, Var('x'), Cst(5)), EqualPAexp(Equal, Var('y'), Cst(1))),
+(*Ici in est n et out est x*)                                                                            
+let tpHoare4 = HOARET(BinaryPexp(And, EqualPAexp(Equal, Var('n'), Cst(5)), EqualPAexp(Equal, Var('x'), Cst(1))),
                       prog_facto,
-                      BinaryPexp(And, EqualPAexp(Equal, Var('x'), Cst(0)), EqualPAexp(Equal, Var('y'), Cst(120)))
+                      BinaryPexp(And, EqualPAexp(Equal, Var('n'), Cst(0)), EqualPAexp(Equal, Var('x'), Cst(120)))
                  );;
 
 (*1.4.5 Validite d'un triplet de Hoare *)
@@ -548,4 +546,4 @@ let htvalid_test(tpHoaret, list_valuation) =
 htvalid_test(tpHoare1, [('x', 2)]);;
 htvalid_test(tpHoare2, [('x', 2)]);;
 htvalid_test(tpHoare3, [('x', 2);('r', 4)]);;
-htvalid_test(tpHoare4, [('x', 5);('y',1)]);;
+htvalid_test(tpHoare4, [('n', 5);('x',1)]);;
