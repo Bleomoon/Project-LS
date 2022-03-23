@@ -278,39 +278,40 @@ prog_to_string(exp26);;
 
 
 (*1.3.2 Interprtation *)
-let rec selfcompose(func, n) =
-  if (n == 0)
-  then func
-  else selfcompose(func, (n-1))
+let rec selfcompose func n =
+  begin match n with
+  | 0 ->  fun prog ->  prog
+  | 1 ->  fun prog ->  func prog
+  | _ ->  fun prog ->  func (selfcompose (func) (n-1) prog)
+  end
 ;;
 
-let add n =
-  n + 2
-;;
-
-selfcompose(add, 10);;
+let add n = n + 2;;
+let calul = (selfcompose add 10) 0;;
 
 let rec valuation_change(name, n, list_valuation)   =
   begin match list_valuation with
   | [] -> [(name, n)]
-  | (x,y)::tl ->
+  | ((x,y)::tl) ->
      if name = x
-     then [(name,n)]@tl
-     else [(x,y)]@(valuation_change(name, n, tl)) 
+     then ((name,n)::tl)
+     else (x,y)::(valuation_change(name, n, tl)) 
   end
 ;;
 
-let rec exec(prog, list_valuation) =
+let rec exec prog list_valuation =
   match prog with
+    Repeat(loop1, aexp, loop2, prog, loop3) ->
+     let func = (selfcompose (exec prog) (ainterp(aexp,list_valuation)))
+     in func list_valuation
   | Skip -> list_valuation
   | Affect(aexp1, affect, aexp2) ->
      begin match aexp1 with
      | Var(v) -> valuation_change(v, (ainterp(aexp2,list_valuation)), list_valuation)
      | _ -> valuation_change('p', (ainterp(aexp2,list_valuation)), list_valuation)
      end
-  | Seq(prog1, prog2) -> (exec(prog1, list_valuation))@(exec(prog2, list_valuation))
-  | Condition(cond1, bexp, cond2, progThen, cond3, progElse) -> if(binterp(bexp, list_valuation)) then (exec(progThen, list_valuation)) else (exec(progElse, list_valuation))
-  | Repeat(loop1, aexp, loop2, prog, loop3) -> selfcompose(exec(prog, list_valuation), (ainterp(aexp,list_valuation)))
+  | Seq(prog1, prog2) -> (exec prog2 (exec prog1 list_valuation))
+  | Condition(cond1, bexp, cond2, progThen, cond3, progElse) -> if(binterp(bexp, list_valuation)) then (exec progThen list_valuation) else (exec progElse list_valuation)
 ;;
 
 let prog_facto =
@@ -318,10 +319,8 @@ let prog_facto =
 ;;
 
 
-let valuafb = ref[ref('x', 1);ref('n', 5)];;
-
-valuation_change('x', 9, valuafb);; 
-exec(prog_facto, valuafb);;
+let valuafb = [('x', 1);('n', 5)];;
+exec prog_facto valuafb;;
 
 let prog_fibo =
   Repeat(REPEAT, Var('n'), DO, Condition(IF, InfEqAexp(InfEqual, Var('n'), Cst(1)), THEN,
@@ -540,7 +539,7 @@ let htvalid_test(tpHoaret, list_valuation) =
   | HOARET(tprop1, prog, tprop2) ->
      if (pinterp(tprop1, list_valuation) = true)
      then
-       if (pinterp(tprop2, (list_valuation@exec(prog, list_valuation))) = true)
+       if (pinterp(tprop2, (exec prog list_valuation)) = true)
        then true
        else false
      else false
@@ -549,4 +548,4 @@ let htvalid_test(tpHoaret, list_valuation) =
 htvalid_test(tpHoare1, [('x', 2)]);;
 htvalid_test(tpHoare2, [('x', 2)]);;
 htvalid_test(tpHoare3, [('x', 2);('r', 4)]);;
-htvalid_test(tpHoare4, [('x', 2)]);;
+htvalid_test(tpHoare4, [('x', 5);('y',1)]);;
