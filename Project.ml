@@ -824,10 +824,17 @@ let not_elim (goal : tgoal) (h1: string)  (h2: string) =
   | _ -> failwith "error not_elim : not a Neg expression"
 ;;
 
-(* TODO cree la fct qui vérifie q'une tprop est égale à [1/i]I ?? 
-hrepeat
-hcons
-*)
+let admit goal =
+  begin match goal.conclusion with
+  | Hoare hoare -> failwith "Calling admit on an hoare conclusion"
+  | Formule form ->
+     begin match form with
+     | EqualPAexp(op, fg, fd) -> []
+     | _ -> failwith "Calling admit on a tprop that is not EqualPAexp"
+     end
+  end
+;;
+  
 let hskip goal tprop1 prog tprop2 list_valuation =
   begin match prog with
   | Skip -> if(pinterp(tprop1, list_valuation))
@@ -867,13 +874,17 @@ let hassign goal tprop1 prog tprop2 list_valuation =
   end
 ;;
 
+(* La logique d'une boucle est si (I)while b do c(I /\ Not(b)) devient (I/\b)c(I)
+Dans un repeat cela nous donne (I)repeat x do c od(I /\ x = 0) devient (I /\ x > 0)c(I) soucis on a pas de >, cel devient donc (I /\ Not(x = 0))c(I)
+ *)
 let hrepeat goal tprop1 prog tprop2 list_valuation =
     begin match prog with
   | Repeat(loop, aexp, loop2, prog, loop3) ->
      if(pinterp(tprop1, list_valuation) && binterp(InfEqAexp(InfEqual, aexp, Cst(0)), list_valuation))
      then
        if pinterp(tprop2, (exec prog list_valuation))
-       then goal
+       then let newTprop = BinaryPexp(And, tprop2, NegP(Not, EqualPAexp(Equal, Cst(ainterp(aexp, list_valuation)), Cst(0)))) in
+         [create_goal_with_formule ([(prop_to_string newTprop, newTprop);(prop_to_string tprop2, tprop2)]) (Hoare(HOARET(newTprop, prog, tprop1)))]
        else failwith "PostCondition is false in HREPEAT"
      else failwith "Preconfition is false in HREPEAT"
   | _ -> failwith "Prog Repeat not found in HREPEAT command"
@@ -883,19 +894,8 @@ let hrepeat goal tprop1 prog tprop2 list_valuation =
 let hcons goal tprop1 prog tprop2 list_valuation =
   if(pinterp(tprop1, list_valuation))
   then
-    if pinterp(tprop2, (exec prog1 list_valuation))
-    then
-      let tprop1P = 
-      begin match tprop1 with
-      | TrueP -> TrueP
-      | FalseP -> FalseP
-      | NegP(op, fd) -> 
-      | BinaryPexp(op, fg, fd) ->
-      | ImplPexp(op, fg, fd) -> 
-      | EqualPAexp(op, fg, fd) ->
-      | InfPEqAexp(op, fg, fd) ->
-      end
-        in
+    if pinterp(tprop2, (exec prog list_valuation))
+    then []
     else failwith "PostCondition is false in HCONS"
   else failwith "Preconfition is false in HCONS"
 ;;
@@ -918,30 +918,27 @@ let hseq goal tprop1 prog tprop2 list_valuation =
 let apply_hoare_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
   begin match tactic with
   | Hoare_Tactics hoare ->
-     begin match goal with
-     | formule,conclusion ->
-        begin match conclusion with
-        | Hoare(ht) ->
-           begin match ht with
-           | HOARET(t1, p, t2) ->
-               begin match hoare with
-               | HSkip   -> hskip goal t1 p t2 list_valuation
-               | HAssign -> hassign goal t1 p t2 list_valuation
-               | HIf     -> hif goal t1 p t2 list_valuation
-               | HRepeat -> hrepeat goal t1 p t2 list_valuation
-               | Hcons   -> hcons goal t1 p t2 list_valuation
-               | HSEq    -> hseq goal t1 p t2 list_valuation
-               end
+     begin match goal.conclusion with
+     | Hoare(ht) ->
+        begin match ht with
+        | HOARET(t1, p, t2) ->
+           begin match hoare with
+           | HSkip   -> hskip goal t1 p t2 list_valuation
+           | HAssign -> hassign goal t1 p t2 list_valuation
+           | HIf     -> hif goal t1 p t2 list_valuation
+           | HRepeat -> hrepeat goal t1 p t2 list_valuation
+           | Hcons   -> hcons goal t1 p t2 list_valuation
+           | HSEq    -> hseq goal t1 p t2 list_valuation
            end
-        | Formule(f) -> failwith "Conclusion must be an Hoare triple"
         end
+     | Formule(f) -> failwith "Conclusion must be an Hoare triple"
      end
-  | Prop_tactics intro -> apply_prop_tactic goal tactic
+  | Prop_tactics intro -> apply_prop_tactic goal tactic list_valuation
   end
 ;;
 
 
-let apply_prop_tactic (goal : tgoal) (tactic : ttactic) =
+let apply_prop_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
   match tactic with
   | Prop_tactics prop -> (
     match prop with
@@ -957,9 +954,15 @@ let apply_prop_tactic (goal : tgoal) (tactic : ttactic) =
     | Not_Elim   (h1,h2)->  not_elim    goal h1 h2
     | Assume            ->  []
     | Exact             ->  []
-    | Admit             ->  []
+    | Admit             ->  admit goal
   )
-  (*|  Hoare_Tactics hoare -> apply_hoare_tactic goal tactic*)
+  |  Hoare_Tactics hoare -> apply_hoare_tactic goal tactic list_valuation
+;;
+
+let apply_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
+  match tactic with
+  | Prop_tactics prop -> apply_prop_tactic goal tactic list_valuation
+  | Hoare_Tactics hoare -> apply_hoare_tactic goal tactic list_valuation
 ;;
 
 (* 2.2.1 La logique des propositions*)

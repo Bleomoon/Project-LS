@@ -88,11 +88,12 @@ Fonctions associés:
 
 type hoare_tactics: C'est un Hskip, HAssign, Hif, Hrepeat, Hcons, Hseq
 Fonctions associés:
+	- hassign: Pas terminé non plus nous n'avons pas compris le principe de vérifié que un tprop est égale à [1/i]I
 	- hskip: Effectue un skip, elle vérifie que les deux tprop soit vrai et renvoie un goal vide
 	- hif: Vérifie que le triple d'hoare est correct puis crée deux nouveau triple ce qui supprime la Condition
-	- hrepeat: Non terminé
-	- hcons: Non terminé
-	- hseq: Non terminé
+	- hrepeat: Vérifie que le triple d'hoare est correct puis un repeat nous donne (I)repeat x do c od(I /\ x = 0) devient donc (I /\ Not(x = 0))c(I) et on introduit un nouveau triplet supprimant l'ancien
+	- hcons: Non terminé, nous n'avons pas compris ce qu'il fallait faire, le cons renvoie donc une liste vide et ne fonctionne pas
+	- hseq: Vérifie que le triple est correct, s'il l'est renvoie 2 nouveau triple avec un nouveau tprop entre les deux programmes, actuellement le tprop est seulement un TrueP
 	- apply_hoare_tactic: Applique une tactic de hoare au propositions
 
 type ttactic: Soit un Prop_tactics soir un Hoare_tactics
