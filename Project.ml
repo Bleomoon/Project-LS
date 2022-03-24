@@ -739,16 +739,13 @@ let not_intro (goal : tgoal) =
   )
 ;;
 
-let rec search_from_key (list : string list) (s : string) =
-  if list = []
-  then failwith ("error search_from_key : not in list")
-  else
-    match list with
-    | hd :: tl ->
-      if hd = s
-      then 0
-      else search_from_key tl s + 1
-    | _  -> failwith ("error search_from_key")
+let rec search_from_key (list : (string * tprop) list) (s : string) =
+  match list with
+  | (h,f)::tl ->
+    if h = s
+    then 0
+    else search_from_key tl s + 1
+  | _  -> failwith ("error search_from_key : not in list")
 ;;
 
 let rec change_nth_formule (formules : (string * tprop) list) (prop : tprop)  (n : int) : (string * tprop) list=
@@ -756,13 +753,13 @@ let rec change_nth_formule (formules : (string * tprop) list) (prop : tprop)  (n
   | (h, formprop):: tl ->
     if n = 0
     then (h, prop) :: tl
-    else (h, formprop)::change_nth_formule formules prop n-1
-  | _   ->  failwith []
+    else (h, formprop) :: (change_nth_formule formules prop (n-1))
+  | _   -> []
 ;;
 
 let and_elim_1 (goal : tgoal) (s : string) =
   let n = search_from_key goal.formule s in
-  let formule = nth n goal.formule in
+  let (h , formule) = nth goal.formule n in
   match formule with
     | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
       match type_prop with
@@ -774,7 +771,7 @@ let and_elim_1 (goal : tgoal) (s : string) =
 
 let and_elim_2 (goal : tgoal) (s : string) =
   let n = search_from_key goal.formule s in
-  let formule = nth n goal.formule in
+  let (h , formule) = nth goal.formule n in
   match formule with
   | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
     match type_prop with
@@ -786,7 +783,7 @@ let and_elim_2 (goal : tgoal) (s : string) =
 
 let or_elim (goal : tgoal) (s : string) =
   let n = search_from_key goal.formule s in
-  let formule = nth n goal.formule in
+  let (h , formule) = nth goal.formule n in
   match formule with
   | BinaryPexp (type_prop, tprop_1, tprop_2) -> (
     match type_prop with
@@ -796,6 +793,35 @@ let or_elim (goal : tgoal) (s : string) =
     | And -> failwith "error : is a and expression"
   )
   | _             -> failwith "error : not a binari  expression"
+;;
+
+let impl_elim (goal : tgoal) (h1: string)  (h2: string) =
+  let n1  = search_from_key goal.formule h1 and
+      n2  = search_from_key goal.formule h2 in
+  let (h1 , formule1)  = nth goal.formule n1 and
+      (h2 , formule2)  = nth goal.formule n2 in
+  match formule1 with
+  |ImplPexp (type_prop, tprop_1, tprop_2) ->
+    if(tprop_1 == formule2)
+    then [add_formule_goal tprop_2 goal]
+    else failwith "error impl_elim : left part of impl is no equal to the second form given"
+  | _ -> failwith "error impl_elim : not a impl form"
+;;
+
+let not_elim (goal : tgoal) (h1: string)  (h2: string) =
+  let n1  = search_from_key goal.formule h1 and
+      n2  = search_from_key goal.formule h2 in
+  let (h1 , formule1)  = nth goal.formule n1 and
+      (h2 , formule2)  = nth goal.formule n2 in
+  match formule1 with
+  | NegP (type_prop, tprop) -> (
+    match type_prop with
+    | Not -> 
+      if(tprop == formule2)
+      then [add_formule_goal tprop goal]
+      else failwith "error not_elim : left part of impl is no equal to the second form given"
+  )
+  | _ -> failwith "error not_elim : not a Neg expression"
 ;;
 
 (* TODO cree la fct qui vérifie q'une tprop est égale à [1/i]I ?? 
@@ -881,9 +907,8 @@ let hseq goal tprop1 prog tprop2 list_valuation =
        if(pinterp(tprop1, list_valuation))
        then
          if pinterp(tprop2, (exec prog list_valuation))
-          then let tpropPB, tpropNPB = BinaryPexp(And, tprop1, bool2prop(bexp)), BinaryPexp(And, tprop2, bool2prop(Neg(Not, bexp))) in
-            [create_goal_with_formule ([(prop_to_string tprop1, tprop1);(prop_to_string ??, ??)]) (Hoare(HOARET(tprop1, p1, ??)));
-           create_goal_with_formule ([(prop_to_string ??, ??);(prop_to_string tprop2, tprop2)]) (Hoare(HOARET(??, p2, tprop2)))]
+          then [create_goal_with_formule ([(prop_to_string tprop1, tprop1);(prop_to_string TrueP, TrueP)]) (Hoare(HOARET(tprop1, p1, TrueP)));
+           create_goal_with_formule ([(prop_to_string TrueP, TrueP);(prop_to_string tprop2, tprop2)]) (Hoare(HOARET(TrueP, p2, tprop2)))]
          else failwith "PostCondition is false in P /\ b in HIF"
        else failwith "Preconfition is false in HSEQ"  
   | _ -> failwith "Prog Seq not found in HSEQ command"
@@ -928,11 +953,11 @@ let apply_prop_tactic (goal : tgoal) (tactic : ttactic) =
     | And_Elim_1 h1     ->  and_elim_1  goal h1
     | And_Elim_2 h1     ->  and_elim_2  goal h1
     | Or_Elim    h1     ->  or_elim     goal h1
-    | Impl_Elim  (h1,h2)->  
-    | Not_Elim    ->  
-    | Assume      ->  
-    | Exact       ->  
-    | Admit       ->  
+    | Impl_Elim  (h1,h2)->  impl_elim   goal h1 h2
+    | Not_Elim   (h1,h2)->  not_elim    goal h1 h2
+    | Assume            ->  []
+    | Exact             ->  []
+    | Admit             ->  []
   )
   (*|  Hoare_Tactics hoare -> apply_hoare_tactic goal tactic*)
 ;;
