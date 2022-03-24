@@ -605,7 +605,7 @@ let goal1 = create_goal (Formule exp30);;
 let goal2 = add_formule_goal exp30 goal1;;
 tgoal_print goal2;;
 
-(* 2.1.2 La rgèle de déduction pour la boucle repeat à voir sur pdf *)
+(* 2.1.2 La rgÃ¨le de dÃ©duction pour la boucle repeat Ã  voir sur pdf *)
 
 (* 2.1.3 Le langage des tactiques *)
 (* Question 6 *)
@@ -639,7 +639,7 @@ type ttactic =
 | Hoare_Tactics of hoare_tactics
 ;;
 
-(* 2.2 Appliquer une tactique à un but *)
+(* 2.2 Appliquer une tactique Ã  un but *)
 
 (*Question 1*)
 let rec bool2prop bexp =
@@ -798,7 +798,7 @@ let or_elim (goal : tgoal) (s : string) =
   | _             -> failwith "error : not a binari  expression"
 ;;
 
-(* TODO cree la fct qui vérifie q'une tprop est égale à [1/i]I ?? 
+(* TODO cree la fct qui vÃ©rifie q'une tprop est Ã©gale Ã  [1/i]I ?? 
 hrepeat
 hcons
 *)
@@ -874,16 +874,15 @@ let hcons goal tprop1 prog tprop2 list_valuation =
   else failwith "Preconfition is false in HCONS"
 ;;
 
-(*On crée un Q qui sera True*)
+(*On crÃ©e un Q qui sera True*)
 let hseq goal tprop1 prog tprop2 list_valuation =
     begin match prog with
     | Seq(p1, p2) ->
        if(pinterp(tprop1, list_valuation))
        then
          if pinterp(tprop2, (exec prog list_valuation))
-          then let tpropPB, tpropNPB = BinaryPexp(And, tprop1, bool2prop(bexp)), BinaryPexp(And, tprop2, bool2prop(Neg(Not, bexp))) in
-            [create_goal_with_formule ([(prop_to_string tprop1, tprop1);(prop_to_string ??, ??)]) (Hoare(HOARET(tprop1, p1, ??)));
-           create_goal_with_formule ([(prop_to_string ??, ??);(prop_to_string tprop2, tprop2)]) (Hoare(HOARET(??, p2, tprop2)))]
+          then [create_goal_with_formule ([(prop_to_string tprop1, tprop1);(prop_to_string TrueP, TrueP)]) (Hoare(HOARET(tprop1, p1, TrueP)));
+           create_goal_with_formule ([(prop_to_string TrueP, TrueP);(prop_to_string tprop2, tprop2)]) (Hoare(HOARET(TrueP, p2, tprop2)))]
          else failwith "PostCondition is false in P /\ b in HIF"
        else failwith "Preconfition is false in HSEQ"  
   | _ -> failwith "Prog Seq not found in HSEQ command"
