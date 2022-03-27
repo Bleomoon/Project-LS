@@ -582,8 +582,18 @@ let tgoal_print goal =
   | Formule formule -> print_endline (prop_to_string formule) 
 ;;
 
+let rec tgoal_list_print (goal : tgoal list) =
+  match goal with
+  | hd::tl  ->  tgoal_print hd;
+                print_endline "";
+                tgoal_list_print tl; 
+  | []      -> print_endline "\n"
+;;
+
+
+
 let fresh_ident =
-  let prefix = " H" and count = ref 0
+  let prefix = "H" and count = ref 0
   in
   function () -> ( count := ! count + 1 ;
   prefix ^ ( string_of_int (! count )))
@@ -605,7 +615,7 @@ let goal1 = create_goal (Formule exp30);;
 let goal2 = add_formule_goal exp30 goal1;;
 tgoal_print goal2;;
 
-(* 2.1.2 La rgèle de déduction pour la boucle repeat à voir sur pdf *)
+(* 2.1.2 La rgï¿½le de dï¿½duction pour la boucle repeat ï¿½ voir sur pdf *)
 
 (* 2.1.3 Le langage des tactiques *)
 (* Question 6 *)
@@ -620,8 +630,8 @@ type prop_tactics =
 | Or_Elim     of string
 | Impl_Elim   of string * string
 | Not_Elim    of string * string
-| Assume
-| Exact
+| Assume      of tprop
+| Exact       of string
 | Admit
 ;;
 
@@ -639,7 +649,7 @@ type ttactic =
 | Hoare_Tactics of hoare_tactics
 ;;
 
-(* 2.2 Appliquer une tactique à un but *)
+(* 2.2 Appliquer une tactique ï¿½ un but *)
 
 (*Question 1*)
 let rec bool2prop bexp =
@@ -824,6 +834,23 @@ let not_elim (goal : tgoal) (h1: string)  (h2: string) =
   | _ -> failwith "error not_elim : not a Neg expression"
 ;;
 
+let assume (goal : tgoal) (prop : tprop) =
+  let new_goal = add_formule_goal prop goal in
+  [new_goal ; (create_goal_with_formule (goal.formule) (Formule prop))]
+;;
+
+let exact (goal : tgoal) (s : string) =
+  let n = search_from_key goal.formule s in
+  let (h , formule) = nth goal.formule n in
+  match goal.conclusion with
+  | Formule f -> (
+    if(formule = f)
+      then []
+      else failwith "error exact : not equal"
+  ) 
+  | Hoare h   -> failwith "error exact : not a tprop"
+;;
+
 let admit goal =
   begin match goal.conclusion with
   | Hoare hoare -> failwith "Calling admit on an hoare conclusion"
@@ -900,7 +927,7 @@ let hcons goal tprop1 prog tprop2 list_valuation =
   else failwith "Preconfition is false in HCONS"
 ;;
 
-(*On crée un Q qui sera True*)
+(*On crï¿½e un Q qui sera True*)
 let hseq goal tprop1 prog tprop2 list_valuation =
     begin match prog with
     | Seq(p1, p2) ->
@@ -915,7 +942,8 @@ let hseq goal tprop1 prog tprop2 list_valuation =
   end
 ;;
 
-let apply_hoare_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
+
+let rec apply_hoare_tactic (goal : tgoal) (tactic : ttactic) list_valuation = (
   begin match tactic with
   | Hoare_Tactics hoare ->
      begin match goal.conclusion with
@@ -935,10 +963,8 @@ let apply_hoare_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
      end
   | Prop_tactics intro -> apply_prop_tactic goal tactic list_valuation
   end
-;;
-
-
-let apply_prop_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
+)
+and apply_prop_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
   match tactic with
   | Prop_tactics prop -> (
     match prop with
@@ -952,8 +978,8 @@ let apply_prop_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
     | Or_Elim    h1     ->  or_elim     goal h1
     | Impl_Elim  (h1,h2)->  impl_elim   goal h1 h2
     | Not_Elim   (h1,h2)->  not_elim    goal h1 h2
-    | Assume            ->  []
-    | Exact             ->  []
+    | Assume     prop   ->  assume      goal prop
+    | Exact      h1     ->  exact       goal h1
     | Admit             ->  admit goal
   )
   |  Hoare_Tactics hoare -> apply_hoare_tactic goal tactic list_valuation
@@ -965,9 +991,88 @@ let apply_tactic (goal : tgoal) (tactic : ttactic) list_valuation =
   | Hoare_Tactics hoare -> apply_hoare_tactic goal tactic list_valuation
 ;;
 
+let apply_tactic_goal_list (goal : tgoal list) (tactic : ttactic) list_valuation =
+  match goal with
+  | hd :: tl -> (apply_tactic hd tactic list_valuation)@ tl
+  | [] -> []
+  ;;
+
 (* 2.2.1 La logique des propositions*)
 (* Question 3*)
 
+(*(P âˆ¨ Q â‡’ R) â‡’ (P â‡’ R) âˆ§ (Q â‡’ R)*)
+let q3_P = InfPEqAexp(InfEqual, Var('x'), Cst(100));;
+let q3_Q = BinaryPexp(Or, EqualPAexp(Equal, Var('y'), Var('x')), EqualPAexp(Equal, Var('y'), Cst(100)));;
+let q3_R = InfPEqAexp(InfEqual, Var('x'), Var('y'));;
+
+
+let q3_left_part  = ImplPexp(Implicit, (BinaryPexp(Or, q3_P, q3_Q)), q3_R);;
+let q3_right_part = BinaryPexp(And, ImplPexp(Implicit, q3_P, q3_R), ImplPexp(Implicit, q3_Q, q3_R) );;
+let q3_final      = ImplPexp(Implicit, q3_left_part, q3_right_part);;
+
+
+(*
+Impl_Intro.
+And_Intro.
+Impl_Intro.
+assume (P \/ Q).
+Impl_Elim in H and H1.
+exact H2.
+Or_Intro_1.
+exact H0.
+Impl_Intro.
+assume (P \/ Q).
+Impl_Elim in H and H1.
+exact H2.
+Or_Intro_2.
+exact H0.
+*)
+
+let q3_goal       = [create_goal (Formule q3_final)];;
+print_endline "\t\t** q3_goal **";;
+tgoal_list_print q3_goal;;
+let q3_goal2 = apply_tactic_goal_list q3_goal (Prop_tactics(Impl_Intro)) [];;
+print_endline "\t\t** q3_goal2 **";;
+tgoal_list_print q3_goal2;;
+let q3_goal3 = apply_tactic_goal_list q3_goal2 (Prop_tactics(And_Intro)) [];;
+print_endline "\t\t** q3_goal3 **";;
+tgoal_list_print q3_goal3;;
+let q3_goal4 = apply_tactic_goal_list q3_goal3 (Prop_tactics(Impl_Intro)) [];;
+print_endline "\t\t** q3_goal4 **";;
+tgoal_list_print q3_goal4;;
+let q3_goal5 = apply_tactic_goal_list q3_goal4 (Prop_tactics(Assume (BinaryPexp(Or, q3_P, q3_Q)))) [];;
+print_endline "\t\t** q3_goal5 **";;
+tgoal_list_print q3_goal5;;
+let q3_goal6 = apply_tactic_goal_list q3_goal5 (Prop_tactics(Impl_Elim ("H2","H4"))) [];;
+print_endline "\t\t** q3_goal6 **";;
+tgoal_list_print q3_goal6;;
+let q3_goal7 = apply_tactic_goal_list q3_goal6 (Prop_tactics(Exact "H5")) [];;
+print_endline "\t\t** q3_goal7 **";;
+tgoal_list_print q3_goal7;;
+let q3_goal8 = apply_tactic_goal_list q3_goal7 (Prop_tactics(Or_Intro_1)) [];;
+print_endline "\t\t** q3_goal8 **";;
+tgoal_list_print q3_goal8;;
+let q3_goal9 = apply_tactic_goal_list q3_goal8 (Prop_tactics(Exact "H3")) [];;
+print_endline "\t\t** q3_goal9 **";;
+tgoal_list_print q3_goal9;;
+let q3_goal10 = apply_tactic_goal_list q3_goal9 (Prop_tactics(Impl_Intro)) [];;
+print_endline "\t\t** q3_goal10 **";;
+tgoal_list_print q3_goal10;;
+let q3_goal11 = apply_tactic_goal_list q3_goal10 (Prop_tactics(Assume (BinaryPexp(Or, q3_P, q3_Q)))) [];;
+print_endline "\t\t** q3_goal11 **";;
+tgoal_list_print q3_goal11;;
+let q3_goal12 = apply_tactic_goal_list q3_goal11 (Prop_tactics(Impl_Elim ("H2","H7"))) [];;
+print_endline "\t\t** q3_goal12 **";;
+tgoal_list_print q3_goal12;;
+let q3_goal13 = apply_tactic_goal_list q3_goal12 (Prop_tactics(Exact "H8")) [];;
+print_endline "\t\t** q3_goal13 **";;
+tgoal_list_print q3_goal13;;
+let q3_goal14 = apply_tactic_goal_list q3_goal13 (Prop_tactics(Or_Intro_2)) [];;
+print_endline "\t\t** q3_goal14 **";;
+tgoal_list_print q3_goal14;;
+let q3_goal15 = apply_tactic_goal_list q3_goal14 (Prop_tactics(Exact "H6")) [];;
+print_endline "\t\t** q3_goal15 **";;
+tgoal_list_print q3_goal15;;
 
 (* 2.2.2 La logique de Hoare*)
 (* Question 4*)

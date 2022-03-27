@@ -693,18 +693,6 @@ let impl_intro (goal : tgoal) =
   )
 ;;
 
-let impl_intro (goal : tgoal) = 
-  match goal.conclusion with
-  | Hoare hoare     -> failwith "error : is a hoare expression"
-  | Formule formule -> (
-    match formule with
-    | ImplPexp (type_prop, tprop_1, tprop_2) -> (
-      match type_prop with
-      | Implicit -> [  add_formule_goal tprop_1 (create_goal_with_formule goal.formule ( Formule tprop_2)) ]
-    )
-    | _ -> failwith "error : not a binari  expression"
-  )
-;;
 
 let not_intro (goal : tgoal) = 
   match goal.conclusion with
