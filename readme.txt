@@ -64,39 +64,43 @@ Fonctions associés :
 type tconclusion: SOit un Hoare de type Hoare_triple soit une formule de type tprop
 type tgoal: Une liste de couple string * tprop et une tconclusion
 Fonctions associés :
-	- print_formule_list: Affiche une formule
-	- tgoal_print: Affiche un tgoal
-	- fresh_ident:  TODO
-	- add_formule_goal: TODO
-	- create_goal: TODO
-	- create_goal_with_formule: Crée un tgoal à partir d'une conclusion et d'une formule
+	- print_formule_list: Affiche une formule.
+	- tgoal_print		: Affiche un tgoal.
+	- fresh_ident		: Genere une clé sous la forme d'un string pour la formule.
+	- add_formule_goal	: Ajoute une formule a un goal?
+	- create_goal		: Crée un tgoal a partir d'une conclusion. 
+	- create_goal_with_formule: Crée un tgoal à partir d'une conclusion et d'une formule.
 
 
 La fonction bool2prop : Transforme un bexp en tprop
 
 type prop_tactics: C'est un And_Intro, Or_Intro_1, Or_Intro_2, Impl_Intro, Not_Intro, And_Elim_1 qui est un string, And_Elim_2 qui est un string, Or_Elim qui est un string, Impl_Elim qui sont 2 string, Not_Elim qui sont 2 string, Assume, Exact ou Admit
 Fonctions associés:
-	- and_intro: TODO
-	- or_intro_1: TODO
-	- or_intro_2: TODO
-	- impl_intro: TODO
-	- not_intro: TODO
-	- and_elim_1: TODO
-	- and_elim_2: TODO
-	- or_elim : TODO
-	- apply_prop_tactic: TODO
+	- and_intro	: Applique la tactique and_intro sur un goal.
+	- or_intro_1: Applique la tactique or_intro_1 sur un goal.
+	- or_intro_2: Applique la tactique or_intro_2 sur un goal.
+	- impl_intro: Applique la tactique impl_intro sur un goal.
+	- not_intro	: Applique la tactique not_intro sur un goal.
+	- and_elim_1: Applique la tactique and_elim_1 sur un goal avec la clé de la formule.
+	- and_elim_2: Applique la tactique and_elim_2 sur un goal avec la clé de la formule.
+	- or_elim 	: Applique la tactique or_elim sur un goal avec la clé de la formule.
+	- impl_elim	: Applique la tactique impl_elim sur un goal avec deux clé de formules.
+	- not_elim	: Applique la tactique not_elim sur un goal avec deux clé de formules.
+
+	- apply_prop_tactic: Lance les fonctions de tactique en fonction du la tactique donnée sur le goal.  
 
 type hoare_tactics: C'est un Hskip, HAssign, Hif, Hrepeat, Hcons, Hseq
 Fonctions associés:
-	- hassign: Pas terminé non plus nous n'avons pas compris le principe de vérifié que un tprop est égale à [1/i]I
-	- hskip: Effectue un skip, elle vérifie que les deux tprop soit vrai et renvoie un goal vide
-	- hif: Vérifie que le triple d'hoare est correct puis crée deux nouveau triple ce qui supprime la Condition
-	- hrepeat: Vérifie que le triple d'hoare est correct puis un repeat nous donne (I)repeat x do c od(I /\ x = 0) devient donc (I /\ Not(x = 0))c(I) et on introduit un nouveau triplet supprimant l'ancien
-	- hcons: Non terminé, nous n'avons pas compris ce qu'il fallait faire, le cons renvoie donc une liste vide et ne fonctionne pas
-	- hseq: Vérifie que le triple est correct, s'il l'est renvoie 2 nouveau triple avec un nouveau tprop entre les deux programmes, actuellement le tprop est seulement un TrueP
+	- hassign	: Pas terminé non plus nous n'avons pas compris le principe de vérifié que un tprop est égale à [1/i]I
+	- hskip		: Effectue un skip, elle vérifie que les deux tprop soit vrai et renvoie un goal vide
+	- hif		: Vérifie que le triple d'hoare est correct puis crée deux nouveau triple ce qui supprime la Condition
+	- hrepeat	: Vérifie que le triple d'hoare est correct puis un repeat nous donne (I)repeat x do c od(I /\ x = 0) devient donc (I /\ Not(x = 0))c(I) et on introduit un nouveau triplet supprimant l'ancien
+	- hcons		: Non terminé, nous n'avons pas compris ce qu'il fallait faire, le cons renvoie donc une liste vide et ne fonctionne pas
+	- hseq		: Vérifie que le triple est correct, s'il l'est renvoie 2 nouveau triple avec un nouveau tprop entre les deux programmes, actuellement le tprop est seulement un TrueP
+
 	- apply_hoare_tactic: Applique une tactic de hoare au propositions
 
 type ttactic: Soit un Prop_tactics soir un Hoare_tactics
 Fonctions associés:
-	- search_from_key: TODO
-	- change_nth_formule: TODO
+	- search_from_key	: Recherche une formule dans le goal depuis une clé et renvoie la position dans la liste.
+	- change_nth_formule: Renvoie une liste de formule ou la formule a la position n a été remplacé par la formule envoyé en parametre.

@@ -581,7 +581,7 @@ let tgoal_print goal =
 ;;
 
 let fresh_ident =
-  let prefix = " H" and count = ref 0
+  let prefix = "H" and count = ref 0
   in
   function () -> ( count := ! count + 1 ;
   prefix ^ ( string_of_int (! count )))
@@ -840,5 +840,3 @@ let apply_prop_tactic (goal : tgoal) (tactic : ttactic) =
   )
   (*|  Hoare_Tactics hoare -> apply_hoare_tactic goal tactic*)
 ;;
-
-
